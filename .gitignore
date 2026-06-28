@@ -1,0 +1,70 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# EEG/raw/intermediate/generated data
+*.mat
+*.cnt
+*.dat
+*.h5
+*.hdf5
+Complete DA-SNN Experiment Code/Preprocessing/**/raw_EEG/**
+Complete DA-SNN Experiment Code/Preprocessing/**/eeg_raw_data/**
+Complete DA-SNN Experiment Code/Preprocessing/**/dataset/**
+Complete DA-SNN Experiment Code/Preprocessing/**/Preprocessed_EEG/**
+Complete DA-SNN Experiment Code/Preprocessing/**/PerSession_*/**
+Complete DA-SNN Experiment Code/Preprocessing/**/PerSubject_*/**
+Complete DA-SNN Experiment Code/Preprocessing/**/processed_data_all/**
+Complete DA-SNN Experiment Code/Preprocessing/**/Feature_*/**
+!Complete DA-SNN Experiment Code/Preprocessing/**/.gitkeep
+
+# Model checkpoints / training logs
+*.pt
+*.pth
+*.ckpt
+*.onnx
+runs/
+logs/
+wandb/
+tensorboard/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+
+# Local secrets / machine-specific config
+.env
+.env.*
+*.key
+*.pem

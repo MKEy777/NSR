@@ -1,0 +1,1 @@
+- [claude-md-self-update](claude-md-self-update.md) — 每次项目文件变更后必须同步更新 CLAUDE.md
