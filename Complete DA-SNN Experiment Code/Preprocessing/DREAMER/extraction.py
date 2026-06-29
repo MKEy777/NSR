@@ -7,7 +7,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from pykalman import KalmanFilter
 
-MAX_WORKERS = 8
+MAX_WORKERS = 12
 FS = 128
 GRID_ROWS = 4
 GRID_COLS = 5

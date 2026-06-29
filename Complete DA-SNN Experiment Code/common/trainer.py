@@ -106,7 +106,7 @@ def train_one_epoch(
     running_loss = 0.0
     correct = 0
     total = 0
-    for features, labels in loader:
+    for batch_idx, (features, labels) in enumerate(loader):
         features = features.to(device)
         labels = labels.to(device)
         features = inject_noise(features, noise_type, noise_level)
@@ -176,6 +176,13 @@ def evaluate(model, loader, criterion, device, noise_type: str | None = None, no
     return running_loss / max(total, 1), metrics
 
 
+def _subjects_for_indices(bundle: DatasetBundle, indices: np.ndarray) -> list[int]:
+    if bundle.subject_id is None:
+        return []
+    subjects = np.unique(bundle.subject_id[np.asarray(indices, dtype=np.int64)])
+    return [int(subject) for subject in subjects.tolist()]
+
+
 def run_single_split(bundle: DatasetBundle, split: Split, config: ExperimentConfig, device: torch.device) -> dict[str, float]:
     if split.val_indices is None:
         train_indices, val_indices = _make_train_val_indices(
@@ -194,7 +201,7 @@ def run_single_split(bundle: DatasetBundle, split: Split, config: ExperimentConf
     train_dataset = EEGTensorDataset(features, bundle.labels, train_indices)
     val_dataset = EEGTensorDataset(features, bundle.labels, val_indices)
     test_dataset = EEGTensorDataset(features, bundle.labels, split.test_indices)
-    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, num_workers=0)
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, num_workers=0, drop_last=True)
     val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False, num_workers=0)
     test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False, num_workers=0)
     model = build_model(
@@ -214,9 +221,13 @@ def run_single_split(bundle: DatasetBundle, split: Split, config: ExperimentConf
     best_metrics = None
     best_score = -1.0
     best_state = None
+    best_epoch = None
+    epochs_ran = 0
+    early_stopped = False
     stale_epochs = 0
     for _epoch in range(config.max_epochs):
-        train_one_epoch(
+        epochs_ran = _epoch + 1
+        train_loss, train_acc = train_one_epoch(
             model,
             train_loader,
             criterion,
@@ -228,14 +239,19 @@ def run_single_split(bundle: DatasetBundle, split: Split, config: ExperimentConf
         )
         _val_loss, metrics = evaluate(model, val_loader, criterion, device, config.noise_type, config.noise_level)
         scheduler.step()
+        if (_epoch + 1) % 20 == 0 or _epoch == 0:
+            print(f"  [{_epoch+1}/{config.max_epochs}] train_acc={train_acc:.4f} val_acc={metrics['accuracy']:.4f}", flush=True)
         if metrics["accuracy"] > best_score + config.min_delta:
             best_score = metrics["accuracy"]
             best_metrics = metrics
             best_state = copy.deepcopy(model.state_dict())
+            best_epoch = _epoch + 1
             stale_epochs = 0
         else:
             stale_epochs += 1
             if stale_epochs >= config.patience:
+                early_stopped = True
+                print(f"  early stop at epoch {_epoch+1}", flush=True)
                 break
     if best_state is not None:
         model.load_state_dict(best_state)
@@ -248,6 +264,13 @@ def run_single_split(bundle: DatasetBundle, split: Split, config: ExperimentConf
             "final_accuracy": final_metrics["accuracy"],
             "split": split.name,
             "seed": config.seed,
+            "best_epoch": best_epoch,
+            "stopped_epoch": epochs_ran,
+            "epochs_ran": epochs_ran,
+            "early_stopped": early_stopped,
+            "train_subjects": _subjects_for_indices(bundle, train_indices),
+            "val_subjects": _subjects_for_indices(bundle, val_indices),
+            "test_subjects": _subjects_for_indices(bundle, split.test_indices),
             "train_count": int(len(train_indices)),
             "val_count": int(len(val_indices)),
             "test_count": int(len(split.test_indices)),
@@ -266,8 +289,8 @@ def run_experiment(bundle: DatasetBundle, splits: list[Split], config: Experimen
         result = run_single_split(bundle, split, config, device)
         rows.append(result)
         write_json(run_dir / f"{split.name}.json", result)
-    summary = summarize_runs(rows)
-    summary.update({"dataset": config.dataset, "model": config.model_name, "protocol": config.protocol, "seed": config.seed})
-    write_json(run_dir / "summary.json", summary)
-    write_csv(run_dir / "runs.csv", rows)
+        summary = summarize_runs(rows)
+        summary.update({"dataset": config.dataset, "model": config.model_name, "protocol": config.protocol, "seed": config.seed})
+        write_json(run_dir / "summary.json", summary)
+        write_csv(run_dir / "runs.csv", rows)
     return summary

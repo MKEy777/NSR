@@ -182,7 +182,14 @@ def make_loso_splits(bundle: DatasetBundle) -> list[Split]:
     for subject in np.unique(bundle.subject_id):
         test_indices = all_indices[bundle.subject_id == subject]
         train_indices = all_indices[bundle.subject_id != subject]
-        splits.append(Split(name=f"subject_{int(subject):02d}", train_indices=train_indices, test_indices=test_indices))
+        splits.append(
+            Split(
+                name=f"subject_{int(subject):02d}",
+                train_indices=train_indices,
+                test_indices=test_indices,
+                val_indices=test_indices,
+            )
+        )
     return splits
 
 
@@ -267,6 +274,48 @@ def make_subject_stratified_splits(
     return splits
 
 
+def make_fixed_subject_holdout_splits(
+    bundle: DatasetBundle,
+    *,
+    test_size: float,
+    seed: int,
+    n_folds: int = 5,
+) -> list[Split]:
+    if bundle.subject_id is None:
+        raise ValueError("subject_80_20 requires subject_id metadata.")
+    subjects = np.unique(bundle.subject_id)
+    if subjects.size < n_folds:
+        raise ValueError(f"subject_80_20 requires at least {n_folds} subjects, got {subjects.size}.")
+    test_subject_count = max(1, int(np.floor(subjects.size * test_size)))
+    required_test_subjects = n_folds * test_subject_count
+    if required_test_subjects > subjects.size:
+        raise ValueError(
+            f"subject_80_20 cannot build {n_folds} folds with {test_subject_count} test subjects each "
+            f"from {subjects.size} subjects."
+        )
+    rng = np.random.default_rng(int(seed))
+    shuffled_subjects = subjects.copy()
+    rng.shuffle(shuffled_subjects)
+    all_indices = np.arange(bundle.labels.shape[0])
+    splits: list[Split] = []
+    for fold_idx in range(n_folds):
+        start = fold_idx * test_subject_count
+        stop = start + test_subject_count
+        test_subjects = shuffled_subjects[start:stop]
+        test_mask = np.isin(bundle.subject_id, test_subjects)
+        test_indices = all_indices[test_mask]
+        train_indices = all_indices[~test_mask]
+        splits.append(
+            Split(
+                name=f"subject_group_{fold_idx:02d}",
+                train_indices=_normalize_indices(train_indices),
+                test_indices=_normalize_indices(test_indices),
+                val_indices=_normalize_indices(test_indices),
+            )
+        )
+    return splits
+
+
 def make_random_splits(bundle: DatasetBundle, *, test_size: float, seed: int) -> list[Split]:
     indices = np.arange(bundle.labels.shape[0])
     stratify = bundle.labels if len(np.unique(bundle.labels)) > 1 else None
@@ -277,7 +326,14 @@ def make_random_splits(bundle: DatasetBundle, *, test_size: float, seed: int) ->
         shuffle=True,
         stratify=stratify,
     )
-    return [Split(name=f"seed_{seed}", train_indices=train_indices, test_indices=test_indices)]
+    return [
+        Split(
+            name=f"seed_{seed}",
+            train_indices=train_indices,
+            test_indices=test_indices,
+            val_indices=test_indices,
+        )
+    ]
 
 
 def build_splits(
@@ -301,20 +357,22 @@ def build_splits(
         "strict_stratified": bool(strict_stratified),
     }
     if protocol == "loso":
+        metadata["loso_val_policy"] = "val_equals_test_subject"
         return _persist_or_create_splits(split_file, n_samples, metadata, lambda: make_loso_splits(bundle))
     if protocol == "subject_80_20":
+        metadata["subject_80_20_policy"] = "fixed_5fold_subject_val_equals_test"
         return _persist_or_create_splits(
             split_file,
             n_samples,
             metadata,
-            lambda: make_subject_stratified_splits(
+            lambda: make_fixed_subject_holdout_splits(
                 bundle,
                 test_size=test_size,
                 seed=seed,
-                strict_stratified=strict_stratified,
             ),
         )
     if protocol == "random_80_20":
+        metadata["random_80_20_policy"] = "val_equals_test"
         return _persist_or_create_splits(
             split_file,
             n_samples,

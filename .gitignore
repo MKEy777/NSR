@@ -29,6 +29,7 @@ ENV/
 *.dat
 *.h5
 *.hdf5
+raw_EEG/
 Complete DA-SNN Experiment Code/Preprocessing/**/raw_EEG/**
 Complete DA-SNN Experiment Code/Preprocessing/**/eeg_raw_data/**
 Complete DA-SNN Experiment Code/Preprocessing/**/dataset/**

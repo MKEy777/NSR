@@ -7,7 +7,7 @@ from pathlib import Path
 
 FS = 128
 WINDOW_S = 9
-STEP_S = 4.5
+STEP_S = 9
 BASELINE_S = 3
 N_CHANNELS = 32
 TOTAL_FRAMES = 6

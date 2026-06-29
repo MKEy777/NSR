@@ -5,6 +5,7 @@ from pathlib import Path
 
 from common.config import DATASET_CONFIGS, resolve_feature_file
 import numpy as np
+import torch
 
 from common.data_loader import DatasetBundle, build_splits, load_feature_bundle
 from common.metrics import write_csv
@@ -16,6 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run DA-SNN revision experiments.")
     parser.add_argument("--dataset", choices=DATASET_CONFIGS.keys(), required=True)
     parser.add_argument("--model", choices=(*MODEL_NAMES, "all"), required=True)
+    parser.add_argument("--exclude", nargs="*", default=None, choices=MODEL_NAMES)
     parser.add_argument("--protocol", choices=("loso", "subject_80_20", "random_80_20"), required=True)
     parser.add_argument("--seeds", nargs="+", type=int, default=[42])
     parser.add_argument("--feature-file", default=None)
@@ -39,7 +41,7 @@ def parse_args():
 def make_synthetic_bundle(dataset: str) -> DatasetBundle:
     cfg = DATASET_CONFIGS[dataset]
     samples_per_subject = max(cfg.num_classes * 5, 20)
-    subject_count = 3
+    subject_count = 5
     n_samples = samples_per_subject * subject_count
     rng = np.random.default_rng(123)
     features = rng.normal(size=(n_samples, *cfg.input_shape)).astype(np.float32)
@@ -51,8 +53,12 @@ def make_synthetic_bundle(dataset: str) -> DatasetBundle:
 
 
 def main() -> None:
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
     args = parse_args()
     model_names = MODEL_NAMES if args.model == "all" else (args.model,)
+    if args.exclude:
+        model_names = tuple(m for m in model_names if m not in args.exclude)
     require_metadata = args.protocol in {"loso", "subject_80_20"}
     feature_path = resolve_feature_file(args.dataset, args.feature_file)
     try:
