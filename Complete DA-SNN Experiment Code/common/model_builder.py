@@ -139,11 +139,14 @@ def _try_build_from_module(path: Path, class_names: tuple[str, ...], num_classes
     return None
 
 
-def _validate_output(model: nn.Module, cfg, model_name: str) -> nn.Module:
+def _validate_output(model: nn.Module, cfg, model_name: str, device: torch.device | None = None) -> nn.Module:
     was_training = model.training
     model.eval()
+    if device is None:
+        params = list(model.parameters())
+        device = params[0].device if params else torch.device("cpu")
     with torch.no_grad():
-        out = model(torch.zeros(2, *cfg.input_shape))
+        out = model(torch.zeros(2, *cfg.input_shape, device=device))
     if isinstance(out, tuple):
         out = out[0]
     if tuple(out.shape) != (2, cfg.num_classes):
@@ -189,7 +192,7 @@ def _build_dh_snn(cfg, device: torch.device) -> nn.Module:
         branch_num=getattr(module, "BRANCH_NUM", 8),
         v_threshold=getattr(module, "V_THRESHOLD", 0.5),
     )
-    return _validate_output(model, cfg, "dh_snn")
+    return model
 
 
 def build_model(

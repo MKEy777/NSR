@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Tuple
 from pykalman import KalmanFilter
 
-MAX_WORKERS = 8
+MAX_WORKERS = 16
 FS = 128
 GRID_ROWS = 6
 GRID_COLS = 7

@@ -47,6 +47,12 @@ def write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+def _serialize_csv_value(value):
+    if isinstance(value, (list, tuple)):
+        return ",".join(str(item) for item in value)
+    return value
+
+
 def write_csv(path: Path, rows: list[dict]) -> None:
     if not rows:
         return
@@ -55,4 +61,4 @@ def write_csv(path: Path, rows: list[dict]) -> None:
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(rows)
+        writer.writerows({key: _serialize_csv_value(value) for key, value in row.items()} for row in rows)

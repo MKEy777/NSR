@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pytest
 from scipy.io import savemat
@@ -47,9 +49,15 @@ def test_loso_splits_hold_out_each_subject(tmp_path):
 
     assert len(splits) == 3
     for split in splits:
+        assert split.val_indices is not None
         train_subjects = set(bundle.subject_id[split.train_indices])
+        val_subjects = set(bundle.subject_id[split.val_indices])
         test_subjects = set(bundle.subject_id[split.test_indices])
+        np.testing.assert_array_equal(split.val_indices, split.test_indices)
+        assert len(val_subjects) == 1
         assert len(test_subjects) == 1
+        assert val_subjects == test_subjects
+        assert train_subjects.isdisjoint(val_subjects)
         assert train_subjects.isdisjoint(test_subjects)
 
 
@@ -67,6 +75,50 @@ def test_subject_stratified_splits_keep_each_subject_separate(tmp_path):
         assert len(split.test_indices) > 0
 
 
+def test_subject_80_20_builds_fixed_five_fold_subject_holdout(tmp_path):
+    subject_count = 12
+    samples_per_subject = 2
+    features = np.random.default_rng(4).normal(size=(subject_count * samples_per_subject, 4, 8, 9)).astype(np.float32)
+    bundle = DatasetBundle(
+        features=features,
+        labels=np.tile(np.array([0, 1], dtype=np.int64), subject_count),
+        subject_id=np.repeat(np.arange(subject_count), samples_per_subject).astype(np.int64),
+        trial_id=np.tile(np.arange(samples_per_subject), subject_count).astype(np.int64),
+        session_id=np.zeros(subject_count * samples_per_subject, dtype=np.int64),
+    )
+
+    splits = build_splits(
+        "subject_80_20",
+        bundle,
+        seed=7,
+        dataset="deap",
+        split_dir=tmp_path / "splits",
+    )
+
+    assert len(splits) == 5
+    test_subject_counts = {}
+    all_subjects = set(np.unique(bundle.subject_id))
+    for split in splits:
+        assert split.val_indices is not None
+        np.testing.assert_array_equal(split.val_indices, split.test_indices)
+        train_subjects = set(bundle.subject_id[split.train_indices])
+        test_subjects = set(bundle.subject_id[split.test_indices])
+        assert split.name.startswith("subject_group_")
+        assert len(test_subjects) == 2
+        assert train_subjects.isdisjoint(test_subjects)
+        for subject in test_subjects:
+            test_subject_counts[int(subject)] = test_subject_counts.get(int(subject), 0) + 1
+
+    tested_subjects = set(test_subject_counts)
+    remainder_subjects = all_subjects - tested_subjects
+    assert len(tested_subjects) == 10
+    assert len(remainder_subjects) == 2
+    assert set(test_subject_counts.values()) == {1}
+    for split in splits:
+        train_subjects = set(bundle.subject_id[split.train_indices])
+        assert remainder_subjects.issubset(train_subjects)
+
+
 def test_random_splits_do_not_require_metadata(tmp_path):
     feature_file = tmp_path / "features.mat"
     write_mat(feature_file, include_metadata=False)
@@ -76,6 +128,8 @@ def test_random_splits_do_not_require_metadata(tmp_path):
 
     assert len(split.train_indices) == 9
     assert len(split.test_indices) == 3
+    assert split.val_indices is not None
+    np.testing.assert_array_equal(split.val_indices, split.test_indices)
 
 
 def test_random_splits_are_saved_and_reused(tmp_path):
@@ -103,6 +157,59 @@ def test_random_splits_are_saved_and_reused(tmp_path):
 
     np.testing.assert_array_equal(first.train_indices, second.train_indices)
     np.testing.assert_array_equal(first.test_indices, second.test_indices)
+    assert first.val_indices is not None
+    assert second.val_indices is not None
+    np.testing.assert_array_equal(first.val_indices, first.test_indices)
+    np.testing.assert_array_equal(second.val_indices, second.test_indices)
+    saved = np.load(split_file, allow_pickle=True)
+    assert "val_indices_0" in saved
+
+
+def test_random_split_cache_rebuilds_legacy_train_val_policy(tmp_path):
+    feature_file = tmp_path / "features.mat"
+    write_mat(feature_file, include_metadata=False)
+    bundle = load_feature_bundle(feature_file, require_metadata=False)
+    split_dir = tmp_path / "splits"
+    split_file = split_dir / "seed" / "random_80_20" / "seed_42.npz"
+    split_file.parent.mkdir(parents=True)
+    np.savez(
+        split_file,
+        names=np.array(["seed_42"], dtype=object),
+        n_samples=np.array([12], dtype=np.int64),
+        metadata_json=np.array(
+            [
+                json.dumps(
+                    {
+                        "schema_version": 2,
+                        "dataset": "seed",
+                        "protocol": "random_80_20",
+                        "seed": 42,
+                        "test_size": 0.2,
+                        "strict_stratified": True,
+                    },
+                    sort_keys=True,
+                )
+            ],
+            dtype=object,
+        ),
+        train_indices_0=np.arange(10, dtype=np.int64),
+        test_indices_0=np.arange(10, 12, dtype=np.int64),
+    )
+
+    split = build_splits(
+        "random_80_20",
+        bundle,
+        seed=42,
+        dataset="seed",
+        split_dir=split_dir,
+    )[0]
+    saved = np.load(split_file, allow_pickle=True)
+    metadata = json.loads(str(saved["metadata_json"][0]))
+
+    assert metadata["random_80_20_policy"] == "val_equals_test"
+    assert split.val_indices is not None
+    np.testing.assert_array_equal(split.val_indices, split.test_indices)
+    np.testing.assert_array_equal(saved["val_indices_0"], saved["test_indices_0"])
 
 
 def test_subject_splits_do_not_cross_trials_between_train_and_test(tmp_path):
@@ -148,35 +255,54 @@ def test_subject_splits_allow_explicit_nonstratified_fallback():
     assert len(split.test_indices) == 2
 
 
-def test_subject_split_cache_does_not_bypass_strict_stratified(tmp_path):
-    features = np.random.default_rng(2).normal(size=(4, 4, 8, 9)).astype(np.float32)
+def test_subject_split_cache_rebuilds_legacy_trial_level_policy(tmp_path):
+    features = np.random.default_rng(2).normal(size=(24, 4, 8, 9)).astype(np.float32)
     bundle = DatasetBundle(
         features=features,
-        labels=np.array([0, 0, 0, 1], dtype=np.int64),
-        subject_id=np.zeros(4, dtype=np.int64),
-        trial_id=np.arange(4, dtype=np.int64),
-        session_id=np.zeros(4, dtype=np.int64),
+        labels=np.tile(np.array([0, 1], dtype=np.int64), 12),
+        subject_id=np.repeat(np.arange(12), 2).astype(np.int64),
+        trial_id=np.tile(np.arange(2), 12).astype(np.int64),
+        session_id=np.zeros(24, dtype=np.int64),
     )
     split_dir = tmp_path / "splits"
+    split_file = split_dir / "deap" / "subject_80_20" / "seed_7.npz"
+    split_file.parent.mkdir(parents=True)
+    np.savez(
+        split_file,
+        names=np.array(["subject_00"], dtype=object),
+        n_samples=np.array([24], dtype=np.int64),
+        metadata_json=np.array(
+            [
+                json.dumps(
+                    {
+                        "schema_version": 2,
+                        "dataset": "deap",
+                        "protocol": "subject_80_20",
+                        "seed": 7,
+                        "test_size": 0.2,
+                        "strict_stratified": True,
+                    },
+                    sort_keys=True,
+                )
+            ],
+            dtype=object,
+        ),
+        train_indices_0=np.arange(2, 24, dtype=np.int64),
+        test_indices_0=np.arange(2, dtype=np.int64),
+    )
 
-    build_splits(
+    splits = build_splits(
         "subject_80_20",
         bundle,
         seed=7,
         dataset="deap",
         split_dir=split_dir,
-        strict_stratified=False,
     )
+    saved = np.load(split_file, allow_pickle=True)
+    metadata = json.loads(str(saved["metadata_json"][0]))
 
-    with pytest.raises(ValueError, match="subject_00.*cannot be stratified"):
-        build_splits(
-            "subject_80_20",
-            bundle,
-            seed=7,
-            dataset="deap",
-            split_dir=split_dir,
-            strict_stratified=True,
-        )
+    assert len(splits) == 5
+    assert metadata["subject_80_20_policy"] == "fixed_5fold_subject_val_equals_test"
 
 
 def test_subject_stratified_splits_support_non_contiguous_labels():
