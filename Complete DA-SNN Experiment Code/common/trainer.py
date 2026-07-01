@@ -29,6 +29,7 @@ class ExperimentConfig:
     seed: int
     output_dir: Path
     max_epochs: int = 200
+    max_splits: int | None = None
     batch_size: int = 8
     learning_rate: float = 5e-4
     weight_decay: float = 0.0
@@ -282,7 +283,13 @@ def run_single_split(bundle: DatasetBundle, split: Split, config: ExperimentConf
 def run_experiment(bundle: DatasetBundle, splits: list[Split], config: ExperimentConfig) -> dict[str, float]:
     set_seed(config.seed)
     device = torch.device("cuda" if torch.cuda.is_available() and not config.dry_run else "cpu")
-    max_splits = 1 if config.dry_run else len(splits)
+    max_splits = len(splits)
+    if config.max_splits is not None:
+        if config.max_splits < 1:
+            raise ValueError("max_splits must be at least 1.")
+        max_splits = min(max_splits, config.max_splits)
+    if config.dry_run:
+        max_splits = min(max_splits, 1)
     run_dir = config.output_dir / config.dataset / config.protocol / config.model_name / f"seed_{config.seed}"
     rows = []
     for split in splits[:max_splits]:

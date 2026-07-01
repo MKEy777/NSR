@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent
 INPUT_DIR = BASE_DIR / "raw_EEG"
 OUTPUT_DIR = BASE_DIR / "processed_data_all"
 
-MAX_WORKERS = int(os.getenv("N_WORKERS", "16"))
+MAX_WORKERS = int(os.getenv("N_WORKERS", "4"))
 
 labels = {
     1: [4, 1, 3, 2, 0, 4, 1, 3, 2, 0, 4, 1, 3, 2, 0],
