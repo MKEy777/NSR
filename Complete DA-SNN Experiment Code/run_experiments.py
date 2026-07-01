@@ -24,6 +24,7 @@ def parse_args():
     parser.add_argument("--output-dir", default="experiment_outputs")
     parser.add_argument("--split-dir", default="splits")
     parser.add_argument("--max-epochs", type=int, default=200)
+    parser.add_argument("--max-splits", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--test-size", type=float, default=0.2)
     parser.add_argument("--allow-nonstratified-subject-split", action="store_true")
@@ -86,6 +87,7 @@ def main() -> None:
                 protocol=args.protocol,
                 seed=seed,
                 max_epochs=args.max_epochs,
+                max_splits=args.max_splits,
                 batch_size=args.batch_size,
                 output_dir=Path(args.output_dir),
                 standard_minmax=args.standard_minmax,

@@ -94,6 +94,39 @@ def test_run_experiment_loso_writes_complete_split_result_fields(tmp_path):
     assert runs_csv.exists()
 
 
+def test_run_experiment_respects_max_splits_without_dry_run(tmp_path):
+    feature_file = tmp_path / "features.mat"
+    savemat(
+        feature_file,
+        {
+            "features": np.random.default_rng(4).normal(size=(12, 4, 8, 9)).astype(np.float32),
+            "labels": np.array([0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2], dtype=np.int64),
+            "subject_id": np.repeat(np.arange(4), 3).astype(np.int64),
+            "trial_id": np.tile(np.arange(3), 4).astype(np.int64),
+            "session_id": np.zeros(12, dtype=np.int64),
+        },
+    )
+    bundle = load_feature_bundle(feature_file, require_metadata=True)
+    splits = make_loso_splits(bundle)
+    config = ExperimentConfig(
+        dataset="seed",
+        model_name="da_snn",
+        protocol="loso",
+        seed=42,
+        max_epochs=1,
+        max_splits=2,
+        batch_size=4,
+        output_dir=tmp_path / "out",
+    )
+
+    summary = run_experiment(bundle, splits, config)
+
+    assert summary["count"] == 2
+    assert (tmp_path / "out" / "seed" / "loso" / "da_snn" / "seed_42" / "subject_00.json").exists()
+    assert (tmp_path / "out" / "seed" / "loso" / "da_snn" / "seed_42" / "subject_01.json").exists()
+    assert not (tmp_path / "out" / "seed" / "loso" / "da_snn" / "seed_42" / "subject_02.json").exists()
+
+
 def test_run_experiment_subject_80_20_writes_subject_group_result(tmp_path):
     subject_count = 12
     samples_per_subject = 2
