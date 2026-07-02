@@ -1,13 +1,12 @@
 import os
 import numpy as np
 import pickle as cPickle
-from scipy import signal as sig
 from scipy.io import savemat
 from pathlib import Path
 
 FS = 128
 WINDOW_S = 9
-STEP_S = 9
+STEP_S = 4.5
 BASELINE_S = 3
 N_CHANNELS = 32
 TOTAL_FRAMES = 6
@@ -20,11 +19,6 @@ def discretize_label(valence, arousal):
     hv = 1 if valence >= 5 else 0
     ha = 1 if arousal >= 5 else 0
     return hv * 2 + ha
-
-def bandpass_filter(data, fs=FS, lowcut=1.0, highcut=50.0, order=4):
-    nyq = 0.5 * fs
-    b, a = sig.butter(order, [lowcut / nyq, highcut / nyq], btype='band')
-    return sig.filtfilt(b, a, data, axis=1).astype(np.float32)
 
 def segment_trial(trial_data):
     win = int(WINDOW_S * FS)
@@ -62,13 +56,11 @@ def process_subject(filepath):
     for trial_idx in range(num_trials):
         trial_data = data_raw[trial_idx]
 
-        filtered = bandpass_filter(trial_data)
-
-        bl = filtered[:, :baseline_len]
+        bl = trial_data[:, :baseline_len]
         baseline_mean = np.mean(bl, axis=1, keepdims=True)
         baseline_std = np.std(bl, axis=1, keepdims=True)
 
-        corrected = (filtered[:, baseline_len:] - baseline_mean) / (baseline_std + 1e-8)
+        corrected = (trial_data[:, baseline_len:] - baseline_mean) / (baseline_std + 1e-8)
         corrected = np.nan_to_num(corrected.astype(np.float32))
 
         valence = labels_raw[trial_idx, 0]

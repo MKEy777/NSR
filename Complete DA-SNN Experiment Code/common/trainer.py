@@ -18,7 +18,7 @@ from common.data_loader import DatasetBundle, EEGTensorDataset, Split
 from common.metrics import compute_metrics, summarize_runs, write_csv, write_json
 from common.model_builder import build_model
 from common.noise_injector import StandardMinMaxEncoder, inject_noise
-from model.TTFS import SpikingDense
+from model.TTFS import SpikingDense, DF_TTFS_Encoder
 
 
 @dataclass(frozen=True)
@@ -63,34 +63,51 @@ def _forward_logits(model: nn.Module, features: torch.Tensor):
 def _update_time_windows(model: nn.Module, min_ti_list, gamma_ttfs: float) -> None:
     if not hasattr(model, "layers_list"):
         return
-    snn_layers = [layer for layer in model.layers_list if isinstance(layer, SpikingDense) and not layer.outputLayer]
+    # 从 DF_TTFS_Encoder 的 t_max 获取初始时间
+    snn_input_t_max = 1.0
+    for layer in model.layers_list:
+        if isinstance(layer, DF_TTFS_Encoder):
+            snn_input_t_max = float(layer.t_max)
+            break
     t_min_prev = 0.0
-    current_t_min = 1.0
-    for layer, min_ti in zip(snn_layers, min_ti_list):
-        if min_ti is None:
+    current_t_min = snn_input_t_max
+    # 遍历所有 SpikingDense 层（包括输出层），用 k 索引对应 min_ti_list
+    k = 0
+    for layer in model.layers_list:
+        if not isinstance(layer, SpikingDense):
+            continue
+        if not layer.outputLayer:
+            min_ti = min_ti_list[k] if k < len(min_ti_list) else None
+            k += 1
+            if min_ti is None:
+                layer.set_time_params(t_min_prev, current_t_min, current_t_min + 1.0)
+                t_min_prev = current_t_min
+                current_t_min = current_t_min + 1.0
+                continue
+            layer_t_max_val = float(layer.t_max)
+            if isinstance(min_ti, tuple):
+                spike_times, spike_mask = min_ti
+                finite_min_ti = spike_times.detach().cpu()
+                valid_mask = spike_mask.detach().cpu().bool() & torch.isfinite(finite_min_ti)
+                positive_spikes = finite_min_ti[valid_mask & (finite_min_ti < layer_t_max_val)]
+            else:
+                finite_min_ti = min_ti.detach().cpu()
+                positive_spikes = finite_min_ti[torch.isfinite(finite_min_ti) & (finite_min_ti < layer_t_max_val)]
+            base_interval = 1.0
+            new_t_max = current_t_min + base_interval
+            if positive_spikes.numel() > 0:
+                earliest_spike = float(torch.min(positive_spikes))
+                if layer_t_max_val > earliest_spike:
+                    dynamic_term = gamma_ttfs * (layer_t_max_val - earliest_spike)
+                    new_t_max = min(current_t_min + max(base_interval, dynamic_term), current_t_min + 100.0)
+            layer.set_time_params(t_min_prev, current_t_min, new_t_max)
+            t_min_prev = current_t_min
+            current_t_min = new_t_max
+        else:
+            # 输出层：固定 +1.0 间隔
             layer.set_time_params(t_min_prev, current_t_min, current_t_min + 1.0)
             t_min_prev = current_t_min
             current_t_min = current_t_min + 1.0
-            continue
-        layer_t_max_val = float(layer.t_max)
-        if isinstance(min_ti, tuple):
-            spike_times, spike_mask = min_ti
-            finite_min_ti = spike_times.detach().cpu()
-            valid_mask = spike_mask.detach().cpu().bool() & torch.isfinite(finite_min_ti)
-            positive_spikes = finite_min_ti[valid_mask & (finite_min_ti < layer_t_max_val)]
-        else:
-            finite_min_ti = min_ti.detach().cpu()
-            positive_spikes = finite_min_ti[torch.isfinite(finite_min_ti) & (finite_min_ti < layer_t_max_val)]
-        base_interval = 1.0
-        new_t_max = current_t_min + base_interval
-        if positive_spikes.numel() > 0:
-            earliest_spike = float(torch.min(positive_spikes))
-            if layer_t_max_val > earliest_spike:
-                dynamic_term = gamma_ttfs * (layer_t_max_val - earliest_spike)
-                new_t_max = min(current_t_min + max(base_interval, dynamic_term), current_t_min + 100.0)
-        layer.set_time_params(t_min_prev, current_t_min, new_t_max)
-        t_min_prev = current_t_min
-        current_t_min = new_t_max
 
 
 def train_one_epoch(
@@ -116,6 +133,7 @@ def train_one_epoch(
         logits = outputs[0] if isinstance(outputs, tuple) else outputs
         loss = criterion(logits, labels)
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
         if isinstance(outputs, tuple):
             _update_time_windows(model, outputs[1], gamma_ttfs)
