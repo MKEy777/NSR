@@ -74,7 +74,7 @@ def build_da_snn(
 ) -> DA_SNN:
     cfg = DATASET_CONFIGS[dataset_name]
     in_channels, height, width = cfg.input_shape
-    conv_channels = 8 if dataset_name in {"seed", "seediv", "seedv"} else 12
+    conv_channels = 8 if dataset_name in {"seed", "seediv", "seedv"} else 18 if dataset_name == "dreamer" else 12
     model = DA_SNN(use_dynamic_window=use_dynamic_window)
     conv_cls = DepthwiseSeparableConv if use_depthwise_separable else nn.Conv2d
     ann_layers = [
