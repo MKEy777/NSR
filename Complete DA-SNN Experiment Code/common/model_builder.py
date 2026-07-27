@@ -71,7 +71,6 @@ def build_da_snn(
     use_dsgm: bool = True,
     use_ttfs_encoder: bool = True,
     use_dynamic_window: bool = True,
-    replace_dsgm_with_conv: bool = False,
 ) -> DA_SNN:
     cfg = DATASET_CONFIGS[dataset_name]
     in_channels, height, width = cfg.input_shape
@@ -83,13 +82,7 @@ def build_da_snn(
         nn.BatchNorm2d(conv_channels),
         nn.ReLU(inplace=True),
     ]
-    if replace_dsgm_with_conv:
-        ann_layers.extend([
-            nn.Conv2d(conv_channels, conv_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(conv_channels),
-            nn.ReLU(inplace=True),
-        ])
-    elif use_dsgm:
+    if use_dsgm:
         ann_layers.append(DSGM(conv_channels, conv_channels, kernel_size=3))
     model.add(nn.Sequential(*ann_layers))
     with torch.no_grad():

@@ -1,5 +1,4 @@
 
-import argparse
 import os
 import time
 import numpy as np
@@ -23,7 +22,7 @@ BASE_DIR          = Path(__file__).resolve().parent
 INPUT_DIR         = BASE_DIR / "PerSession_4sZScore_62x800"
 OUTPUT_DIR        = BASE_DIR / "Feature_PowerSpectrumEntropy_LDS_Smoothed_SEED"
 
-def process_file_robust(file_path: str, skip_lds: bool = False):
+def process_file_robust(file_path: str):
     print(f"Processing: {os.path.basename(file_path)}")
     mat = loadmat(file_path)
     X_raw = mat['seg_X']
@@ -64,9 +63,8 @@ def process_file_robust(file_path: str, skip_lds: bool = False):
         
         trial_features = np.stack(trial_features_list)
         
-        if not skip_lds:
-            trial_features = apply_lds_smoothing(trial_features)
-        all_session_features.append(trial_features)
+        smoothed_features = apply_lds_smoothing(trial_features)
+        all_session_features.append(smoothed_features)
         n_windows = len(trial_features_list)
         all_session_labels.extend([trial_label] * n_windows)
         all_subject_ids.extend([subject_value] * n_windows)
@@ -79,11 +77,6 @@ def process_file_robust(file_path: str, skip_lds: bool = False):
     return final_features, final_labels, np.array(all_subject_ids, dtype=np.int64), np.array(all_trial_ids, dtype=np.int64), np.array(all_session_ids, dtype=np.int64)
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--skip-lds", action="store_true", help="Skip LDS smoothing and use raw PSE features")
-    args = parser.parse_args()
-    skip_lds = args.skip_lds
-
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     all_features_list, all_labels_list = [], []
     all_subject_ids_list, all_trial_ids_list, all_session_ids_list = [], [], []
@@ -91,7 +84,7 @@ def main():
     
     start_time = time.time()
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        future_to_path = {executor.submit(process_file_robust, path, skip_lds): path for path in file_paths}
+        future_to_path = {executor.submit(process_file_robust, path): path for path in file_paths}
         
         for future in as_completed(future_to_path):
             path = future_to_path[future]
@@ -123,7 +116,7 @@ def main():
     print("\n--- Data Aggregation Summary ---")
     print(f"Total samples aggregated: {len(X_all)}")
 
-    output_filename = "all_features_pse_no_lds.mat" if skip_lds else "all_features_pse_lds_smoothed.mat"
+    output_filename = "all_features_pse_lds_smoothed.mat"
     output_path = os.path.join(OUTPUT_DIR, output_filename)
     savemat(output_path, {'features': X_all, 'labels': y_all, 'subject_id': subject_all, 'trial_id': trial_all, 'session_id': session_all}, do_compression=True)
     print(f"\nSuccessfully saved all aggregated data to: {output_path}")

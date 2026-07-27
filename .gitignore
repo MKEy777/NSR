@@ -29,6 +29,8 @@ ENV/
 *.dat
 *.h5
 *.hdf5
+*.npz
+*.npy
 raw_EEG/
 Complete DA-SNN Experiment Code/Preprocessing/**/raw_EEG/**
 Complete DA-SNN Experiment Code/Preprocessing/**/eeg_raw_data/**
@@ -39,6 +41,10 @@ Complete DA-SNN Experiment Code/Preprocessing/**/PerSubject_*/**
 Complete DA-SNN Experiment Code/Preprocessing/**/processed_data_all/**
 Complete DA-SNN Experiment Code/Preprocessing/**/Feature_*/**
 !Complete DA-SNN Experiment Code/Preprocessing/**/.gitkeep
+
+# Jupyter
+.ipynb_checkpoints/
+Complete DA-SNN Experiment Code/**/.ipynb_checkpoints/
 
 # Model checkpoints / training logs
 *.pt
@@ -65,8 +71,8 @@ tensorboard/
 *.xdv
 
 # Token optimizer
-.tmp-token-optimizer
-token-optimizer
+.tmp-token-optimizer/
+tmp-token-optimizer/
 
 # Local secrets / machine-specific config
 .env

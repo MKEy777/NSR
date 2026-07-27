@@ -1,4 +1,3 @@
-import argparse
 import os
 import time
 import numpy as np
@@ -8,7 +7,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from pykalman import KalmanFilter
 
-MAX_WORKERS = 12
+MAX_WORKERS = 8
 FS = 128
 GRID_ROWS = 4
 GRID_COLS = 5
@@ -74,7 +73,7 @@ def apply_lds(x, n_iter=3):
             y[:, i] = obs
     return y.reshape(x.shape).astype(np.float32)
 
-def process_file(fp, skip_lds=False):
+def process_file(fp):
     mat = loadmat(fp)
     X = mat["seg_X"]
     y = mat["seg_y"].flatten()
@@ -107,9 +106,7 @@ def process_file(fp, skip_lds=False):
         if not trial_features:
             continue
 
-        trial_features = np.stack(trial_features)
-        if not skip_lds:
-            trial_features = apply_lds(trial_features)
+        trial_features = apply_lds(np.stack(trial_features))
         feats.append(trial_features)
         labels.append(y[start_idx:end_idx].astype(np.int64))
         trial_ids.append(np.full(trial_features.shape[0], trial_idx, dtype=np.int64))
@@ -125,11 +122,6 @@ def process_file(fp, skip_lds=False):
     return feats, labels, subject_ids, np.concatenate(trial_ids).astype(np.int64), session_ids
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--skip-lds", action="store_true", help="Skip LDS smoothing and use raw PSE features")
-    args = parser.parse_args()
-    skip_lds = args.skip_lds
-
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     files = [
@@ -145,7 +137,7 @@ def main():
     all_subject_ids, all_trial_ids, all_session_ids = [], [], []
 
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as ex:
-        futs = [ex.submit(process_file, f, skip_lds) for f in files]
+        futs = [ex.submit(process_file, f) for f in files]
         for fut in as_completed(futs):
             x, y, subject_ids, trial_ids, session_ids = fut.result()
             if len(x) > 0:
@@ -161,9 +153,8 @@ def main():
     trial_all = np.concatenate(all_trial_ids).astype(np.int64)
     session_all = np.concatenate(all_session_ids).astype(np.int64)
 
-    out_name = "all_features_pse_no_lds.mat" if skip_lds else "all_features_pse_lds_smoothed.mat"
     savemat(
-        os.path.join(OUTPUT_DIR, out_name),
+        os.path.join(OUTPUT_DIR, "all_features_pse_lds_smoothed.mat"),
         {"features": X, "labels": y, "subject_id": subject_all, "trial_id": trial_all, "session_id": session_all},
         do_compression=True
     )
