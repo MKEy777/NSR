@@ -44,7 +44,6 @@ class ExperimentConfig:
     use_dsgm: bool = True
     use_ttfs_encoder: bool = True
     use_dynamic_window: bool = True
-    replace_dsgm_with_conv: bool = False
     dry_run: bool = False
 
 
@@ -246,10 +245,9 @@ def run_single_split(bundle: DatasetBundle, split: Split, config: ExperimentConf
         device,
         da_snn_options={
             "use_depthwise_separable": config.use_depthwise_separable,
-            "use_dsgm": config.use_dsgm and not config.replace_dsgm_with_conv,
+            "use_dsgm": config.use_dsgm,
             "use_ttfs_encoder": config.use_ttfs_encoder,
             "use_dynamic_window": config.use_dynamic_window,
-            "replace_dsgm_with_conv": config.replace_dsgm_with_conv,
         },
     )
     criterion = nn.CrossEntropyLoss()

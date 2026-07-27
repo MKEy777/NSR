@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from common.config import DATASET_CONFIGS
 from common.data_loader import load_feature_bundle, EEGTensorDataset
 from common.model_builder import build_model
-from common.trainer import set_seed, _update_time_windows
+from common.trainer import set_seed
 from common.noise_injector import inject_noise
 from model.TTFS import SpikingDense, DF_TTFS_Encoder
 
@@ -27,17 +27,24 @@ def train_and_record(
     seed=42,
     max_epochs=200,
     batch_size=8,
+    lam=0.05,
     learning_rate=5e-4,
     patience=30,
     min_delta=1e-4,
-    gamma_ttfs=10.0,
+    t_e_ema_momentum=0.9,
+    min_width=1.0,
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     set_seed(seed)
 
     base = Path(__file__).resolve().parent.parent
-    cfg = DATASET_CONFIGS[dataset]
-    feature_path = base / cfg.default_feature_file
+    feature_path = (
+        base
+        / "Preprocessing"
+        / "SEED"
+        / "Feature_PowerSpectrumEntropy_LDS_Smoothed_SEED"
+        / "all_features_lds_smoothed.mat"
+    )
     bundle = load_feature_bundle(feature_path, dataset=dataset, require_metadata=False)
 
     model = build_model(
@@ -83,12 +90,15 @@ def train_and_record(
         None,
     )
 
+    t_e_ema = {lay.name: None for lay in spike_hidden}
+    next_time_params = []
+
     window_history = []
     best_acc = 0.0
     stale = 0
 
     print(f"Recording {len(spike_hidden)} hidden SpikingDense layers")
-    print(f"Device: {device}  |  gamma_ttfs={gamma_ttfs}  |  Max epochs: {max_epochs}")
+    print(f"Device: {device}  |  λ={lam}  |  Max epochs: {max_epochs}")
 
     for epoch in range(max_epochs):
         model.train()
@@ -96,6 +106,15 @@ def train_and_record(
         correct = 0
         total = 0
         for features, labels in train_loader:
+            if next_time_params:
+                for lay, tmin_prev, tmin, tmax in next_time_params:
+                    lay.set_time_params(
+                        torch.as_tensor(tmin_prev, device=device),
+                        torch.as_tensor(tmin, device=device),
+                        torch.as_tensor(tmax, device=device),
+                    )
+                next_time_params.clear()
+
             features, labels = features.to(device), labels.to(device)
             features = inject_noise(features, "none", 0.0)
             optimizer.zero_grad(set_to_none=True)
@@ -106,8 +125,54 @@ def train_and_record(
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
-            if isinstance(outputs, tuple):
-                _update_time_windows(model, outputs[1], gamma_ttfs)
+            if isinstance(outputs, tuple) and outputs[1]:
+                min_ti_list = outputs[1]
+                with torch.no_grad():
+                    snn_input_t_max = 1.0
+                    for lay in model.layers_list:
+                        if isinstance(lay, DF_TTFS_Encoder):
+                            snn_input_t_max = float(lay.t_max)
+                            break
+                    prev_boundary = snn_input_t_max
+                    prev_prev_boundary = 0.0
+                    k = 0
+                    for lay in model.layers_list:
+                        if not isinstance(lay, SpikingDense):
+                            continue
+                        if lay.outputLayer:
+                            continue
+                        min_ti = min_ti_list[k] if k < len(min_ti_list) else None
+                        k += 1
+                        if min_ti is None:
+                            continue
+
+                        curr_t_min = float(lay.t_min)
+                        curr_t_max = float(lay.t_max)
+                        new_t_max = curr_t_max
+
+                        if isinstance(min_ti, tuple):
+                            spike_times, spike_mask = min_ti
+                            valid = spike_times[spike_mask.bool() & torch.isfinite(spike_times) & (spike_times < curr_t_max)]
+                        else:
+                            valid = min_ti[torch.isfinite(min_ti) & (min_ti < curr_t_max)]
+                        if valid.numel() > 0:
+                            t_e_raw = float(torch.min(valid))
+                            ema = t_e_ema[lay.name]
+                            if ema is None:
+                                ema = t_e_raw
+                            else:
+                                ema = t_e_ema_momentum * ema + (1 - t_e_ema_momentum) * t_e_raw
+                            t_e_ema[lay.name] = ema
+
+                            midpoint = (curr_t_max + curr_t_min) / 2.0
+                            new_t_max = curr_t_max + lam * (midpoint - ema)
+                            new_t_max = max(new_t_max, prev_boundary + min_width)
+
+                        next_time_params.append(
+                            (lay, prev_prev_boundary, prev_boundary, new_t_max)
+                        )
+                        prev_prev_boundary = prev_boundary
+                        prev_boundary = new_t_max
 
             running_loss += loss.item() * labels.size(0)
             correct += (logits.argmax(1) == labels).sum().item()
@@ -153,15 +218,16 @@ def train_and_record(
 
     out_dir = Path(__file__).resolve().parent / "outputs"
     out_dir.mkdir(exist_ok=True)
+    np.save(out_dir / "window_history.npy", np.array(window_history, dtype=object))
 
+    history = window_history
     for lay in spike_hidden:
         arr = np.array(
-            [(r[f"{lay.name}_t_min"], r[f"{lay.name}_t_max"]) for r in window_history]
+            [(r[f"{lay.name}_t_min"], r[f"{lay.name}_t_max"]) for r in history]
         )
         np.save(out_dir / f"{lay.name}_window.npy", arr)
 
-    np.save(out_dir / "window_history.npy", np.array(window_history, dtype=object))
-    print(f"Saved {len(window_history)} epoch records to {out_dir}")
+    print(f"Saved {len(history)} epoch records to {out_dir}")
     return window_history, spike_hidden
 
 

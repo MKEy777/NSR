@@ -1,0 +1,46 @@
+{
+  "accuracy": 0.6203483768804434,
+  "f1": 0.6278501806056971,
+  "precision": 0.6559974387876286,
+  "sensitivity": 0.620092840904724,
+  "specificity": 0.8115194662682642,
+  "class_accuracy": 0.7468989179202956,
+  "best_val_accuracy": 0.6203483768804434,
+  "best_val_f1": 0.6278501806056971,
+  "best_val_precision": 0.6559974387876286,
+  "best_val_sensitivity": 0.620092840904724,
+  "best_val_specificity": 0.8115194662682642,
+  "best_val_class_accuracy": 0.7468989179202956,
+  "final_accuracy": 0.6203483768804434,
+  "split": "subject_04",
+  "seed": 42,
+  "best_epoch": 24,
+  "stopped_epoch": 54,
+  "epochs_ran": 54,
+  "early_stopped": true,
+  "train_subjects": [
+    1,
+    2,
+    3,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "val_subjects": [
+    4
+  ],
+  "test_subjects": [
+    4
+  ],
+  "train_count": 35364,
+  "val_count": 2526,
+  "test_count": 2526
+}

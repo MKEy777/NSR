@@ -1,18 +1,12 @@
 import numpy as np
 import os
 import glob
-import time
 from scipy.io import savemat
 from pathlib import Path
-from concurrent.futures import ProcessPoolExecutor, as_completed
-import multiprocessing as mp
-from typing import Optional
 
 BASE_DIR = Path(__file__).resolve().parent
 INPUT_DIR = BASE_DIR / "raw_EEG"
 OUTPUT_DIR = BASE_DIR / "processed_data_all"
-
-MAX_WORKERS = int(os.getenv("N_WORKERS", "4"))
 
 labels = {
     1: [4, 1, 3, 2, 0, 4, 1, 3, 2, 0, 4, 1, 3, 2, 0],
@@ -34,69 +28,11 @@ timestamps = {
     }
 }
 
-
-def process_file(filepath: str) -> Optional[str]:
-    """处理单个 .cnt 文件，返回处理结果信息，失败时返回 None。"""
+def main():
     import mne
 
-    filename = os.path.basename(filepath)
-    file_base_name = os.path.splitext(filename)[0]
-
-    try:
-        parts = file_base_name.split('_')
-        session_id = int(parts[1])
-        if session_id not in [1, 2, 3]:
-            raise ValueError("Session ID不在1, 2, 3范围内")
-    except (IndexError, ValueError) as e:
-        return f"SKIP:{filename}: 文件名不符合格式，错误: {e}"
-
-    start_seconds = timestamps[session_id]['start_second']
-    end_seconds = timestamps[session_id]['end_second']
-
-    try:
-        raw = mne.io.read_raw_cnt(filepath, preload=True)
-        info_msg = f"{filename} | 原始采样率: {raw.info['sfreq']} Hz, 原始通道数: {len(raw.ch_names)}"
-
-        channels_to_drop = ['M1', 'M2', 'VEO', 'HEO']
-        existing_channels_to_drop = [ch for ch in channels_to_drop if ch in raw.ch_names]
-
-        if existing_channels_to_drop:
-            raw.drop_channels(existing_channels_to_drop)
-            info_msg += f" | 已丢弃通道: {existing_channels_to_drop}, 剩余通道数: {len(raw.ch_names)}"
-        else:
-            info_msg += " | 未找到需要丢弃的通道 (M1, M2, VEO, HEO)"
-
-        raw.resample(200)
-        info_msg += f" | 降采样至: {raw.info['sfreq']} Hz"
-
-        raw.filter(l_freq=1., h_freq=75., fir_design='firwin')
-        info_msg += " | 1-75 Hz 带通滤波完成"
-
-        mat_output_dict = {}
-        for i in range(len(start_seconds)):
-            start_t, stop_t = start_seconds[i], end_seconds[i]
-            start_sample, stop_sample = raw.time_as_index([start_t, stop_t])
-            data_segment = raw.get_data(start=start_sample, stop=stop_sample)
-            scene_name = f'scene{i+1}'
-            mat_output_dict[scene_name] = data_segment
-
-        info_msg += f" | 分割为 {len(mat_output_dict)} 个 scene"
-        if mat_output_dict:
-            info_msg += f" | Scene1 维度: {mat_output_dict['scene1'].shape}"
-
-        mat_output_path = os.path.join(OUTPUT_DIR, f"{file_base_name}.mat")
-        savemat(mat_output_path, mat_output_dict)
-
-        return f"OK:{filename}: {info_msg}"
-
-    except Exception as e:
-        return f"ERR:{filename}: {e}"
-
-
-def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # 先保存所有 Session 的标签
     all_labels_dict = {
         'label_session1': np.array(labels[1], dtype=int),
         'label_session2': np.array(labels[2], dtype=int),
@@ -117,43 +53,69 @@ def main():
         print(f"警告：在 '{INPUT_DIR}' 中未找到任何 .cnt 文件。")
         return
 
-    print(f"\n找到 {len(all_cnt_files)} 个 .cnt 文件，开始并行处理（max_workers={MAX_WORKERS}）...")
+    print(f"\n找到 {len(all_cnt_files)} 个 .cnt 文件, 将开始全自动处理...")
 
-    start_time = time.time()
+    for filepath in all_cnt_files:
+        filename = os.path.basename(filepath)
+        file_base_name = os.path.splitext(filename)[0]
 
-    mp_ctx = mp.get_context("spawn")
+        try:
+            parts = file_base_name.split('_')
+            session_id = int(parts[1])
+            if session_id not in [1, 2, 3]:
+                raise ValueError("Session ID不在1, 2, 3范围内")
+        except (IndexError, ValueError) as e:
+            print(f"\n!!!!!! 文件名 '{filename}' 不符合 '[Subject]_[Session]_[Date]' 格式，已跳过。错误: {e} !!!!!!")
+            continue
 
-    n_ok, n_skip, n_err = 0, 0, 0
+        print(f"\n{'='*20}\n正在处理文件: {filename} (自动识别为 Session {session_id})\n{'='*20}")
 
-    with ProcessPoolExecutor(
-        max_workers=MAX_WORKERS,
-        mp_context=mp_ctx
-    ) as executor:
-        future_to_path = {
-            executor.submit(process_file, path): path
-            for path in all_cnt_files
-        }
+        start_seconds = timestamps[session_id]['start_second']
+        end_seconds = timestamps[session_id]['end_second']
 
-        for future in as_completed(future_to_path):
-            result = future.result()
-            if result is None:
-                continue
+        try:
+            raw = mne.io.read_raw_cnt(filepath, preload=True)
+            print(f"原始采样率: {raw.info['sfreq']} Hz, 原始通道数: {len(raw.ch_names)}")
+            
+            channels_to_drop = ['M1', 'M2', 'VEO', 'HEO']
+            
+            existing_channels_to_drop = [ch for ch in channels_to_drop if ch in raw.ch_names]
+            
+            if existing_channels_to_drop:
+                raw.drop_channels(existing_channels_to_drop)
+                print(f"已丢弃通道: {existing_channels_to_drop}。剩余通道数: {len(raw.ch_names)}")
+            else:
+                print("数据中未找到需要丢弃的通道 (M1, M2, VEO, HEO)。")
+            
+            raw.resample(200)
+            print(f"降采样至: {raw.info['sfreq']} Hz")
 
-            if result.startswith("OK:"):
-                n_ok += 1
-                print(f"✓ {result[3:]}")
-            elif result.startswith("SKIP:"):
-                n_skip += 1
-                print(f"⊘ {result[5:]}")
-            elif result.startswith("ERR:"):
-                n_err += 1
-                print(f"✗ {result[4:]}")
+            raw.filter(l_freq=1., h_freq=75., fir_design='firwin')
+            print("已应用 1-75 Hz 带通滤波器。")
 
-    elapsed = time.time() - start_time
-    print(f"\n{'='*20}")
-    print(f"所有文件处理完毕！耗时: {elapsed:.2f}s")
-    print(f"成功: {n_ok}  跳过: {n_skip}  失败: {n_err}")
-    print(f"{'='*20}")
+            mat_output_dict = {}
+            for i in range(len(start_seconds)):
+                start_t, stop_t = start_seconds[i], end_seconds[i]
+                
+                start_sample, stop_sample = raw.time_as_index([start_t, stop_t])
+                data_segment = raw.get_data(start=start_sample, stop=stop_sample)
+                
+                scene_name = f'scene{i+1}'
+                mat_output_dict[scene_name] = data_segment
+
+            print(f"数据已分割成 {len(mat_output_dict)} 个 scene。")
+            if mat_output_dict:
+                print(f"Scene1 的数据维度 (通道数 x 采样点数): {mat_output_dict['scene1'].shape}")
+
+            mat_output_path = os.path.join(OUTPUT_DIR, f"{file_base_name}.mat")
+            savemat(mat_output_path, mat_output_dict)
+            print(f"处理完成，数据已保存至: {mat_output_path}")
+
+        except Exception as e:
+            print(f"!!!!!! 处理文件 {filename} 时发生错误: {e} !!!!!!")
+            continue
+
+    print(f"\n{'='*20}\n所有文件处理完毕！\n{'='*20}")
 
 
 if __name__ == "__main__":

@@ -29,8 +29,6 @@ def parse_args():
     parser.add_argument("--test-size", type=float, default=0.2)
     parser.add_argument("--allow-nonstratified-subject-split", action="store_true")
     parser.add_argument("--standard-minmax", action="store_true")
-    parser.add_argument("--no-lds", action="store_true",
-                        help="Use PSE features without LDS smoothing (loads *_no_lds.mat)")
     parser.add_argument(
         "--feature-tag",
         default="",
@@ -55,8 +53,6 @@ def parse_args():
     parser.add_argument("--no-dsgm", action="store_true")
     parser.add_argument("--no-ttfs-encoder", action="store_true")
     parser.add_argument("--no-dynamic-window", action="store_true")
-    parser.add_argument("--replace-dsgm-with-conv", action="store_true",
-                        help="Replace DSGM with a plain Conv2d+BN+ReLU of equivalent params (ablation control)")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -102,12 +98,6 @@ def main() -> None:
     if args.exclude:
         model_names = tuple(m for m in model_names if m not in args.exclude)
     require_metadata = args.protocol in {"loso", "subject_80_20"}
-    if args.no_lds:
-        if not args.feature_file:
-            default = DATASET_CONFIGS[args.dataset].default_feature_file
-            args.feature_file = default.replace("_lds_smoothed", "_no_lds")
-        if not args.feature_tag:
-            args.feature_tag = "no_lds"
     feature_tags = _expand_feature_tags(args)
     summaries = []
     for feature_tag in feature_tags:
@@ -151,7 +141,6 @@ def main() -> None:
                     use_dsgm=not args.no_dsgm,
                     use_ttfs_encoder=not args.no_ttfs_encoder,
                     use_dynamic_window=not args.no_dynamic_window,
-                    replace_dsgm_with_conv=args.replace_dsgm_with_conv,
                     dry_run=args.dry_run,
                 )
                 summaries.append(run_experiment(bundle, splits, config))

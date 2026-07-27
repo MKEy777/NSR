@@ -7,7 +7,7 @@ from pathlib import Path
 
 FS = 128
 WINDOW_S = 9
-STEP_S = 4.5
+STEP_S = 9
 BASELINE_S = 61
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -24,7 +24,7 @@ def label(v, a):
 
 def bandpass(x):
     nyq = 0.5 * FS
-    b, a = sig.butter(4, [1 / nyq, 60 / nyq], btype='band')
+    b, a = sig.butter(4, [1 / nyq, 50 / nyq], btype='band')
     return sig.filtfilt(b, a, x, axis=0).astype(np.float32)
 
 def segment(x):
