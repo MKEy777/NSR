@@ -1,0 +1,73 @@
+{
+  "config": {
+    "dataset": "seediv",
+    "protocol": "random_80_20",
+    "fixed_window": false,
+    "seed": 42,
+    "max_epochs": 1,
+    "batch_size": 4,
+    "measure_at": [
+      0,
+      1
+    ]
+  },
+  "window_type": "adaptive_window",
+  "measurements": {
+    "0": {
+      "dense_1": {
+        "input_dim": 160.0,
+        "output_dim": 64.0,
+        "time_span": 1.0,
+        "active_in_ratio_mean": 0.6394801363031916,
+        "active_in_ratio_std": 0.00873309833646988,
+        "active_out_ratio_mean": 0.46875,
+        "active_out_ratio_std": 0.0,
+        "spectral_norm_mean": 1.1677810214063589,
+        "spectral_norm_std": 0.013308558442597596,
+        "gershgorin_radius_mean": 7.489620234579482,
+        "gershgorin_radius_std": 0.1391249279424648
+      },
+      "dense_2": {
+        "input_dim": 64.0,
+        "output_dim": 32.0,
+        "time_span": 1.0,
+        "active_in_ratio_mean": 0.46875,
+        "active_in_ratio_std": 0.0,
+        "active_out_ratio_mean": 0.625,
+        "active_out_ratio_std": 0.0,
+        "spectral_norm_mean": 1.0812503469592714,
+        "spectral_norm_std": 0.010765630433139214,
+        "gershgorin_radius_mean": 3.8689608573913574,
+        "gershgorin_radius_std": 0.0
+      }
+    },
+    "1": {
+      "dense_1": {
+        "input_dim": 160.0,
+        "output_dim": 64.0,
+        "time_span": 1.0,
+        "active_in_ratio_mean": 0.6394801363031916,
+        "active_in_ratio_std": 0.00873309833646988,
+        "active_out_ratio_mean": 0.46875,
+        "active_out_ratio_std": 0.0,
+        "spectral_norm_mean": 1.1673599520817082,
+        "spectral_norm_std": 0.013564054412765678,
+        "gershgorin_radius_mean": 7.489620234579482,
+        "gershgorin_radius_std": 0.1391249279424648
+      },
+      "dense_2": {
+        "input_dim": 64.0,
+        "output_dim": 32.0,
+        "time_span": 1.0,
+        "active_in_ratio_mean": 0.46875,
+        "active_in_ratio_std": 0.0,
+        "active_out_ratio_mean": 0.625,
+        "active_out_ratio_std": 0.0,
+        "spectral_norm_mean": 1.081178397613954,
+        "spectral_norm_std": 0.010897748723988984,
+        "gershgorin_radius_mean": 3.8689608573913574,
+        "gershgorin_radius_std": 0.0
+      }
+    }
+  }
+}
