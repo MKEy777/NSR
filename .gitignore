@@ -64,6 +64,10 @@ tensorboard/
 *.toc
 *.xdv
 
+# Token optimizer
+.tmp-token-optimizer
+token-optimizer
+
 # Local secrets / machine-specific config
 .env
 .env.*

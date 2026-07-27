@@ -64,7 +64,20 @@ DATASET_CONFIGS: dict[str, DatasetConfig] = {
 }
 
 
-def resolve_feature_file(dataset: str, feature_file: str | None = None) -> Path:
+def resolve_feature_file(dataset: str, feature_file: str | None = None,
+                         feature_tag: str | None = None) -> Path:
+    """Resolve the .mat feature bundle path.
+
+    - If ``feature_file`` is given, use it verbatim (``feature_tag`` is ignored,
+      the caller is expected to have specified the full path).
+    - Otherwise start from ``DATASET_CONFIGS[dataset].default_feature_file``
+      and, if ``feature_tag`` is a non-empty string, splice it in before the
+      ``.mat`` suffix so ``all_features_pse_lds_smoothed.mat`` becomes
+      ``all_features_pse_lds_smoothed_<TAG>.mat``. Empty tag = clean bundle.
+    """
     if feature_file:
         return Path(feature_file)
-    return PROJECT_ROOT / DATASET_CONFIGS[dataset].default_feature_file
+    default_path = PROJECT_ROOT / DATASET_CONFIGS[dataset].default_feature_file
+    if not feature_tag:
+        return default_path
+    return default_path.with_name(f"{default_path.stem}_{feature_tag}{default_path.suffix}")

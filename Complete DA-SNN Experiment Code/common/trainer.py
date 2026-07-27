@@ -44,6 +44,7 @@ class ExperimentConfig:
     use_dsgm: bool = True
     use_ttfs_encoder: bool = True
     use_dynamic_window: bool = True
+    replace_dsgm_with_conv: bool = False
     dry_run: bool = False
 
 
@@ -63,7 +64,6 @@ def _forward_logits(model: nn.Module, features: torch.Tensor):
 def _update_time_windows(model: nn.Module, min_ti_list, gamma_ttfs: float) -> None:
     if not hasattr(model, "layers_list"):
         return
-    # 从 DF_TTFS_Encoder 的 t_max 获取初始时间
     snn_input_t_max = 1.0
     for layer in model.layers_list:
         if isinstance(layer, DF_TTFS_Encoder):
@@ -71,7 +71,6 @@ def _update_time_windows(model: nn.Module, min_ti_list, gamma_ttfs: float) -> No
             break
     t_min_prev = 0.0
     current_t_min = snn_input_t_max
-    # 遍历所有 SpikingDense 层（包括输出层），用 k 索引对应 min_ti_list
     k = 0
     for layer in model.layers_list:
         if not isinstance(layer, SpikingDense):
@@ -104,10 +103,23 @@ def _update_time_windows(model: nn.Module, min_ti_list, gamma_ttfs: float) -> No
             t_min_prev = current_t_min
             current_t_min = new_t_max
         else:
-            # 输出层：固定 +1.0 间隔
             layer.set_time_params(t_min_prev, current_t_min, current_t_min + 1.0)
             t_min_prev = current_t_min
             current_t_min = current_t_min + 1.0
+
+
+def _has_valid_gradients(model: nn.Module) -> bool:
+    for p in model.parameters():
+        if p.grad is not None and (torch.isnan(p.grad).any() or torch.isinf(p.grad).any()):
+            return False
+    return True
+
+
+def _has_valid_weights(model: nn.Module) -> bool:
+    for p in model.parameters():
+        if torch.isnan(p).any() or torch.isinf(p).any():
+            return False
+    return True
 
 
 def train_one_epoch(
@@ -134,7 +146,10 @@ def train_one_epoch(
         loss = criterion(logits, labels)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-        optimizer.step()
+        if _has_valid_gradients(model):
+            optimizer.step()
+        else:
+            optimizer.zero_grad(set_to_none=True)
         if isinstance(outputs, tuple):
             _update_time_windows(model, outputs[1], gamma_ttfs)
         running_loss += loss.item() * labels.size(0)
@@ -174,6 +189,8 @@ def _make_train_val_indices(
 
 def evaluate(model, loader, criterion, device, noise_type: str | None = None, noise_level: float = 0.0) -> tuple[float, dict[str, float]]:
     model.eval()
+    if not _has_valid_weights(model):
+        return float("inf"), {"accuracy": 0.0, "f1_weighted": 0.0, "precision_weighted": 0.0, "recall_weighted": 0.0, "kappa": 0.0}
     cfg_num_classes = None
     all_labels = []
     all_preds = []
@@ -229,9 +246,10 @@ def run_single_split(bundle: DatasetBundle, split: Split, config: ExperimentConf
         device,
         da_snn_options={
             "use_depthwise_separable": config.use_depthwise_separable,
-            "use_dsgm": config.use_dsgm,
+            "use_dsgm": config.use_dsgm and not config.replace_dsgm_with_conv,
             "use_ttfs_encoder": config.use_ttfs_encoder,
             "use_dynamic_window": config.use_dynamic_window,
+            "replace_dsgm_with_conv": config.replace_dsgm_with_conv,
         },
     )
     criterion = nn.CrossEntropyLoss()

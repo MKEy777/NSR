@@ -1,3 +1,4 @@
+import argparse
 import os
 import time
 import numpy as np
@@ -76,7 +77,7 @@ def apply_lds_smoothing(trial_features, n_em_iter=5):
             smoothed[:, i] = obs
     return smoothed.reshape(original_shape).astype(np.float32)
 
-def process_file(file_path):
+def process_file(file_path, skip_lds=False):
     
     print(f"Processing: {os.path.basename(file_path)}")
     mat = loadmat(file_path)
@@ -118,8 +119,9 @@ def process_file(file_path):
         if not trial_feat_list:
             continue
         trial_features = np.stack(trial_feat_list)
-        smoothed = apply_lds_smoothing(trial_features)
-        all_trial_features.append(smoothed)
+        if not skip_lds:
+            trial_features = apply_lds_smoothing(trial_features)
+        all_trial_features.append(trial_features)
         
         n_windows = len(trial_feat_list)
         all_trial_labels.extend([trial_label] * n_windows)
@@ -135,6 +137,11 @@ def process_file(file_path):
     return final_features, final_labels, np.array(all_subject_ids, dtype=np.int64), np.array(all_trial_ids, dtype=np.int64), np.array(all_session_ids, dtype=np.int64)
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--skip-lds", action="store_true", help="Skip LDS smoothing and use raw PSE features")
+    args = parser.parse_args()
+    skip_lds = args.skip_lds
+
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     all_features, all_labels = [], []
     all_subject_ids, all_trial_ids, all_session_ids = [], [], []
@@ -142,7 +149,7 @@ def main():
     start_time = time.time()
 
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        future_to_path = {executor.submit(process_file, p): p for p in file_paths}
+        future_to_path = {executor.submit(process_file, p, skip_lds): p for p in file_paths}
         for future in as_completed(future_to_path):
             path = future_to_path[future]
             try:
@@ -167,7 +174,8 @@ def main():
     subject_all = np.concatenate(all_subject_ids).astype(np.int64)
     trial_all = np.concatenate(all_trial_ids).astype(np.int64)
     session_all = np.concatenate(all_session_ids).astype(np.int64)
-    output_path = os.path.join(OUTPUT_DIR, "all_features_pse_lds_smoothed.mat")
+    out_name = "all_features_pse_no_lds.mat" if skip_lds else "all_features_pse_lds_smoothed.mat"
+    output_path = os.path.join(OUTPUT_DIR, out_name)
     savemat(output_path, {'features': X_all, 'labels': y_all, 'subject_id': subject_all, 'trial_id': trial_all, 'session_id': session_all}, do_compression=True)
     print(f"Saved: {output_path}, shape: {X_all.shape}")
 

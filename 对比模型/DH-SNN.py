@@ -19,7 +19,7 @@ b_j0_value = 0.01
 
 
 def gaussian(x, mu=0., sigma=.5):
-    return torch.exp(-((x - mu) ** 2) / (2 * sigma ** 2)) / torch.sqrt(2 * torch.tensor(math.pi)) / sigma
+    return torch.exp(-((x - mu) ** 2) / (2 * sigma ** 2)) / (sigma * math.sqrt(2 * math.pi))
 
 # define approximate firing function
 
@@ -152,14 +152,13 @@ class readout_integrator_test(nn.Module):
             nn.init.constant_(self.tau_m,low_m)
 
     
-    def set_neuron_state(self,batch_size):
-        self.mem = (torch.rand(batch_size,self.output_dim)).to(self.device)
-    
-    def forward(self,input_spike):
-        #synaptic inputs
+    def set_neuron_state(self, batch_size, device=None):
+        device = device or self.device
+        self.mem = torch.rand(batch_size, self.output_dim, device=device)
+
+    def forward(self, input_spike):
         d_input = self.dense(input_spike.float())
-        # neuron model without spiking
-        self.mem = output_Neuron_pra(d_input,self.mem,self.tau_m,self.dt,device=self.device)
+        self.mem = output_Neuron_pra(d_input, self.mem, self.tau_m, self.dt, device=input_spike.device)
         return self.mem
 
 
@@ -224,18 +223,15 @@ class spike_dense_test_denri_wotanh_R(nn.Module):
 
     
 
-    #init
-    def set_neuron_state(self,batch_size):
-        #mambrane potential
-        self.mem = Variable(torch.rand(batch_size,self.output_dim)).to(self.device)
-        self.spike = Variable(torch.rand(batch_size,self.output_dim)).to(self.device)
-        # dendritic currents
+    def set_neuron_state(self, batch_size, device=None):
+        device = device or self.device
+        self.mem = Variable(torch.rand(batch_size, self.output_dim, device=device))
+        self.spike = Variable(torch.rand(batch_size, self.output_dim, device=device))
         if self.branch == 1:
-            self.d_input = Variable(torch.rand(batch_size,self.output_dim,self.branch)).to(self.device)
+            self.d_input = Variable(torch.rand(batch_size, self.output_dim, self.branch, device=device))
         else:
-            self.d_input = Variable(torch.zeros(batch_size,self.output_dim,self.branch)).to(self.device)
-        #threshold
-        self.v_th = Variable(torch.ones(batch_size,self.output_dim)*self.vth).to(self.device)
+            self.d_input = Variable(torch.zeros(batch_size, self.output_dim, self.branch, device=device))
+        self.v_th = Variable(torch.ones(batch_size, self.output_dim, device=device) * self.vth)
 
     #create connection pattern
     def create_mask(self):
@@ -259,20 +255,14 @@ class spike_dense_test_denri_wotanh_R(nn.Module):
                         self.mask[(i*self.mask_share+k)*self.branch+j,seq[j*input_size // self.branch:(j+1)*input_size // self.branch]] = 1
     def apply_mask(self):
         self.dense.weight.data = self.dense.weight.data*self.mask
-    def forward(self,input_spike):
-        # timing factor of dendritic branches
+    def forward(self, input_spike):
         beta = torch.sigmoid(self.tau_n)
-        padding = torch.zeros(input_spike.size(0),self.pad).to(self.device)
-        k_input = torch.cat((input_spike.float(),padding),1)
-        #update dendritic currents 
-        self.d_input = beta*self.d_input+(1-beta)*self.dense(k_input).reshape(-1,self.output_dim,self.branch)
-        #summation of dendritic currents
-        l_input = (self.d_input).sum(dim=2,keepdim=False)
-        
-        #update membrane potential and generate spikes
-        self.mem,self.spike = mem_update_pra(l_input,self.mem,self.spike,self.v_th,self.tau_m,self.dt,device=self.device)
-        
-        return self.mem,self.spike
+        padding = torch.zeros(input_spike.size(0), self.pad, device=input_spike.device)
+        k_input = torch.cat((input_spike.float(), padding), 1)
+        self.d_input = beta * self.d_input + (1 - beta) * self.dense(k_input).reshape(-1, self.output_dim, self.branch)
+        l_input = self.d_input.sum(dim=2, keepdim=False)
+        self.mem, self.spike = mem_update_pra(l_input, self.mem, self.spike, self.v_th, self.tau_m, self.dt, device=input_spike.device)
+        return self.mem, self.spike
     
     
 #Vanilla SFNN layer
@@ -522,24 +512,17 @@ class Dense_test(nn.Module):
             torch.nn.init.constant_(self.dense_2.dense.bias, 0)
 
     def forward(self, x):
-        # 输入: (B, 4, 8, 9)
         b, t, h, w = x.shape
-
-        # 展平为 (B, 4, 72)
         x = x.view(b, t, -1)
-
-        self.dense_1.set_neuron_state(b)
-        self.dense_2.set_neuron_state(b)
-
-        output = torch.zeros(b, OUTPUT_DIM, device=DEVICE)
-
+        self.dense_1.set_neuron_state(b, device=x.device)
+        self.dense_2.set_neuron_state(b, device=x.device)
+        output = torch.zeros(b, OUTPUT_DIM, device=x.device)
         for i in range(t):
-            input_x = x[:, i, :]  # (B, 72)
+            input_x = x[:, i, :]
             mem1, spk1 = self.dense_1(input_x)
             mem2 = self.dense_2(spk1)
             if i > 0:
                 output += mem2
-
         return F.log_softmax(output / t, dim=1)
 
 # -------------------------
