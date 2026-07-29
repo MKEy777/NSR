@@ -1,3 +1,4 @@
+import argparse
 import sys
 from pathlib import Path
 
@@ -14,7 +15,7 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from common.config import DATASET_CONFIGS
+from common.config import DATASET_CONFIGS, resolve_feature_file
 from common.data_loader import load_feature_bundle, EEGTensorDataset
 from common.model_builder import build_model
 from common.trainer import set_seed
@@ -33,18 +34,16 @@ def train_and_record(
     min_delta=1e-4,
     t_e_ema_momentum=0.9,
     min_width=1.0,
+    feature_file=None,
+    output_dir=None,
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     set_seed(seed)
 
     base = Path(__file__).resolve().parent.parent
-    feature_path = (
-        base
-        / "Preprocessing"
-        / "SEED"
-        / "Feature_PowerSpectrumEntropy_LDS_Smoothed_SEED"
-        / "all_features_lds_smoothed.mat"
-    )
+    feature_path = resolve_feature_file(dataset, feature_file)
+    if not feature_path.is_absolute():
+        feature_path = base / feature_path
     bundle = load_feature_bundle(feature_path, dataset=dataset, require_metadata=False)
 
     model = build_model(
@@ -216,8 +215,11 @@ def train_and_record(
                 print(f"  Early stop at epoch {epoch+1}")
                 break
 
-    out_dir = Path(__file__).resolve().parent / "outputs"
-    out_dir.mkdir(exist_ok=True)
+    if output_dir is not None:
+        out_dir = Path(output_dir)
+    else:
+        out_dir = Path(__file__).resolve().parent.parent / "experiment_outputs" / "window_evolution"
+    out_dir.mkdir(parents=True, exist_ok=True)
     np.save(out_dir / "window_history.npy", np.array(window_history, dtype=object))
 
     history = window_history
@@ -233,10 +235,10 @@ def train_and_record(
 
 def plot_window_evolution(window_history, spike_hidden, save_dir=None):
     if save_dir is None:
-        save_dir = Path(__file__).resolve().parent / "outputs"
+        save_dir = Path(__file__).resolve().parent.parent / "experiment_outputs" / "window_evolution"
     else:
         save_dir = Path(save_dir)
-    save_dir.mkdir(exist_ok=True)
+    save_dir.mkdir(parents=True, exist_ok=True)
 
     epochs = np.array([r["epoch"] for r in window_history])
     n_layers = len(spike_hidden)
@@ -281,12 +283,48 @@ def plot_window_evolution(window_history, spike_hidden, save_dir=None):
         y=1.02,
     )
     plt.tight_layout()
-    fig.savefig(save_dir / "window_evolution.png", dpi=150, bbox_inches="tight")
+    fig.savefig(save_dir / "window_evolution.png", dpi=300, bbox_inches="tight")
     fig.savefig(save_dir / "window_evolution.pdf", bbox_inches="tight")
     plt.close(fig)
     print(f"Saved figures to {save_dir}")
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Record and plot adaptive time window evolution during DA-SNN training on SEED",
+    )
+    parser.add_argument("--dataset", type=str, default="seed", choices=["seed", "seediv", "seedv", "deap", "dreamer"])
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--max-epochs", type=int, default=200)
+    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--lr", type=float, default=5e-4)
+    parser.add_argument("--lam", type=float, default=0.05, help="EMA coefficient for time window update")
+    parser.add_argument("--patience", type=int, default=30)
+    parser.add_argument("--feature-file", type=str, default=None, help="Override feature .mat path")
+    parser.add_argument("--output-dir", type=str, default=None,
+                        help="Output directory (default: experiment_outputs/window_evolution)")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    history, layers = train_and_record()
-    plot_window_evolution(history, layers)
+    args = parse_args()
+    out_dir = args.output_dir if args.output_dir else None
+
+    print(f"Window Evolution Analysis")
+    print(f"  Dataset:    {args.dataset}")
+    print(f"  Seed:       {args.seed}")
+    print(f"  Max epochs: {args.max_epochs}")
+    print(f"  Output:     {out_dir or 'experiment_outputs/window_evolution'}")
+
+    history, layers = train_and_record(
+        dataset=args.dataset,
+        seed=args.seed,
+        max_epochs=args.max_epochs,
+        batch_size=args.batch_size,
+        lam=args.lam,
+        learning_rate=args.lr,
+        patience=args.patience,
+        feature_file=args.feature_file,
+        output_dir=out_dir,
+    )
+    plot_window_evolution(history, layers, save_dir=out_dir)

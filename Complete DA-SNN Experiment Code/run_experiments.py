@@ -99,6 +99,18 @@ def main() -> None:
         model_names = tuple(m for m in model_names if m not in args.exclude)
     require_metadata = args.protocol in {"loso", "subject_80_20"}
     feature_tags = _expand_feature_tags(args)
+    # Build ablation variant tag from --no-* flags
+    ablation_parts = []
+    if args.no_depthwise_separable:
+        ablation_parts.append("no-ds")
+    if args.no_dsgm:
+        ablation_parts.append("no-dsgm")
+    if args.no_ttfs_encoder:
+        ablation_parts.append("no-ttfs")
+    if args.no_dynamic_window:
+        ablation_parts.append("no-dw")
+    ablation_tag = "_".join(ablation_parts) if ablation_parts else "full"
+
     summaries = []
     for feature_tag in feature_tags:
         feature_path = resolve_feature_file(args.dataset, args.feature_file, feature_tag=feature_tag)
@@ -127,6 +139,9 @@ def main() -> None:
                     out_dir = Path(args.output_dir) / feature_tag
                 else:
                     out_dir = Path(args.output_dir)
+
+                # Inject ablation tag into path so each variant has its own directory
+                out_dir = out_dir / ablation_tag
                 config = ExperimentConfig(
                     dataset=args.dataset,
                     model_name=model_name,
@@ -143,7 +158,9 @@ def main() -> None:
                     use_dynamic_window=not args.no_dynamic_window,
                     dry_run=args.dry_run,
                 )
-                summaries.append(run_experiment(bundle, splits, config))
+                summary = run_experiment(bundle, splits, config)
+                summary["ablation"] = ablation_tag
+                summaries.append(summary)
     write_csv(Path(args.output_dir) / args.dataset / args.protocol / "summary_all.csv", summaries)
     print(f"Completed {len(summaries)} experiment summaries.")
 
