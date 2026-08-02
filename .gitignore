@@ -56,6 +56,10 @@ logs/
 wandb/
 tensorboard/
 
+# Experiment output artifacts (large CSV/JSON)
+Complete DA-SNN Experiment Code/outputs/
+写作/Complete DA-SNN Experiment Code/outputs/
+
 # LaTeX build artifacts
 *.aux
 *.bbl
@@ -70,9 +74,22 @@ tensorboard/
 *.toc
 *.xdv
 
+# LaTeX compiled PDFs / intermediate build dirs (source eps/png figures stay tracked)
+NSR_Author/**/*.pdf
+写作/NSR_Author/**/*.pdf
+NSR_Author/.build_*/
+写作/NSR_Author/.build_*/
+*-eps-converted-to.pdf
+
 # Token optimizer
 .tmp-token-optimizer/
 tmp-token-optimizer/
+token-optimizer/**/*.db
+token-optimizer/**/*.db-wal
+token-optimizer/**/*.db-shm
+写作/token-optimizer/**/*.db
+写作/token-optimizer/**/*.db-wal
+写作/token-optimizer/**/*.db-shm
 
 # Local secrets / machine-specific config
 .env

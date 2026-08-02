@@ -1,17 +1,17 @@
 {
-  "accuracy": 0.4320448877805486,
-  "f1": 0.15084893339138006,
-  "precision": 0.10801122194513715,
+  "accuracy": 0.43226600985221675,
+  "f1": 0.15090283748925193,
+  "precision": 0.10806650246305419,
   "sensitivity": 0.25,
   "specificity": 0.75,
-  "class_accuracy": 0.7160224438902744,
-  "best_val_accuracy": 0.4320448877805486,
-  "best_val_f1": 0.15084893339138006,
-  "best_val_precision": 0.10801122194513715,
+  "class_accuracy": 0.7161330049261083,
+  "best_val_accuracy": 0.43226600985221675,
+  "best_val_f1": 0.15090283748925193,
+  "best_val_precision": 0.10806650246305419,
   "best_val_sensitivity": 0.25,
   "best_val_specificity": 0.75,
-  "best_val_class_accuracy": 0.7160224438902744,
-  "final_accuracy": 0.4320448877805486,
+  "best_val_class_accuracy": 0.7161330049261083,
+  "final_accuracy": 0.43226600985221675,
   "split": "subject_group_02",
   "seed": 42,
   "best_epoch": 1,
@@ -51,7 +51,7 @@
     10,
     20
   ],
-  "train_count": 15238,
-  "val_count": 3208,
-  "test_count": 3208
+  "train_count": 7714,
+  "val_count": 1624,
+  "test_count": 1624
 }
