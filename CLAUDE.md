@@ -89,6 +89,8 @@ NSR/
     ├── CLAUDE.md                #    正文/补充材料大纲速查
     ├── main.tex                 #    正文（~41KB）
     ├── supplement.tex           #    补充材料（~32KB）
+    ├── figures/                 #    全部图片集中存放（Overview/DA-SNN eps、robustness/hardoverview png、timingdiagram/BNRELUHSigmoid eps、window_evolution.pdf）
+    ├── response_group*.md       #    各组审稿回复信
     └── nsr_sample.bib           #    参考文献
 ```
 

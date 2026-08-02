@@ -1,0 +1,461 @@
+﻿\documentclass{nsr}
+
+\usepackage{amsmath}
+\let\openbox\relax % 防御性处理，解决与 amsthm 的冲突
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage{siunitx}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage[table]{xcolor}
+\usepackage{algorithm}
+\usepackage{hyperref}
+\sisetup{
+  detect-weight=true,
+  detect-inline-weight=math,
+  input-symbols = (),
+  table-number-alignment = center,
+  table-format = 1.4
+}
+
+\definecolor{lightgray}{rgb}{0.88,0.88,0.88}
+
+\makeatletter
+\def\uns{\ifmmode\,\else$\,$\fi}%
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\makeatother
+
+\jvol{XX}
+\jnum{X}
+\jyear{Year}
+\doi{10.1093/nsr/XXXX}
+\received{XX XX Year}
+\revised{XX XX Year}
+\accepted{XX XX Year}
+
+\markboth{One, Two, and Three}{One, Two, and Three}
+
+\title{An Asynchronous Neuromorphic Architecture for Wearable EEG Emotion Recognition}
+
+\author{Jingxin Liu$^{1,\dagger}$}
+\author{Yiming Zhang$^{2,\dagger}$}
+\author{Zikai Song$^{1}$}
+\author{Zixuan Lai$^{2}$}
+\author{Junyi Liu$^{1}$}
+\author{Fuze Tian$^{3}$}
+\author{Koo Hyoung Lee$^{4}$}
+\author{Qunxi Dong$^{1,*}$}
+\author{Lixian Zhu$^{1,*}$}
+\author{Bin Hu$^{1,*}$}
+
+\affil{$^1$Key Laboratory of Brain Health Intelligent Evaluation and Intervention (Ministry of Education), School of Medical Technology, Beijing Institute of Technology, Beijing 100081, China}
+\affil{$^2$Key Laboratory of Brain Health Intelligent Evaluation and Intervention (Ministry of Education), Beijing Institute of Technology, Zhuhai 519088, China}
+\affil{$^3$School of Information Science and Engineering, Lanzhou University, Lanzhou 730000, China}
+\affil{$^4$NeuroSky, Inc., San Jose, CA 95112, USA}
+
+\authornote{\textbf{Corresponding authors.} E-mail: dongqx@bit.edu.cn
+zhulx@bit.edu.cn
+bh@bit.edu.cn}
+
+\authornote{Equally contributed to this work}
+
+\begin{document}
+
+\dhead{RESEARCH ARTICLE}
+\subhead{INFORMATION SCIENCE}
+
+\abstract[ABSTRACT]{
+Affective electroencephalography (EEG) is inherently event-driven, yet its continuous dynamics contain substantial temporal redundancy. Prevailing synchronous, dense computing paradigms on general-purpose hardware treat all time steps uniformly, incurring prohibitive energy costs that restrict long-term wearable monitoring. To address this, we propose a jointly optimized asynchronous neuromorphic architecture in which a spiking neural network converts EEG-derived features into sparse spike events for energy-efficient inference. Algorithmically, our dynamic adaptive spiking neural network model generates these sparse events using a depthwise separable gating module for spatial efficiency, division-free time-to-first-spike encoding, and an adaptive temporal spiking neural network with trainable temporal-window regulation. In hardware, the resulting sparse events drive a globally asynchronous, locally synchronous accelerator that activates selected data-movement and compute paths only for valid model-generated events, reducing unnecessary idle-state switching. Under the subject-dependent benchmark on SEED, the system achieves 96.85\% accuracy. Within the accelerator-inference boundary, excluding PSE and LDS preprocessing, the FPGA implementation achieves an 18~$\mu$s latency, 40~mW dynamic power, and 2.66~$\mu$J total-power energy per inference.
+}
+
+%\jelcode{Pa, J6, P16, E22}
+
+\keywords{
+affective electroencephalography, asynchronous neuromorphic architecture, spiking neural network, globally asynchronous locally synchronous, wearable monitoring}
+
+
+\maketitle
+
+
+\section{INTRODUCTION}\label{sec1}
+Emotions are fundamental to human cognition, shaping perception, decision-making, and social interaction \cite{ref1}. Consequently, reliably and continuously decoding an individual's affective state in unconstrained environments has emerged as a critical frontier in brain-computer interfaces (BCIs) and personalized longitudinal healthcare \cite{ref2,ref3,ref4}. Among physiological modalities, electroencephalography (EEG) provides direct, high-temporal-resolution access to the central nervous system \cite{ref5,ref6,ref7} dynamics. Importantly, salient neural responses to affective stimuli are not continuous; rather, both microscopic neuronal spiking and macroscopic network reconfigurations in the brain are inherently event-driven and temporally sparse. This biological sparsity provides a principled foundation for highly efficient, on-demand cognitive tracking \cite{ref8}.
+
+Recent progress in wearable EEG devices has markedly lowered the hardware barrier for long-term monitoring. Developments in lightweight sensors \cite{ref9}, hydrogel epidermal electrodes \cite{ref10}, and high-stability analog front-end circuits \cite{ref11} now enable prolonged EEG recording in daily life. However, signal acquisition alone is insufficient for truly wearable emotion recognition. In unconstrained environments, emotions are continuous, slowly varying, and strongly subject-dependent \cite{ref12}. These characteristics require the system to sustain reliable inference under strict constraints on power, intrusiveness, and continuous operation \cite{ref13}.
+
+Convolutional neural networks (CNNs) have been widely adopted in emotion recognition and BCI tasks \cite{ref18}. For example, EEGNet \cite{ref56} typically processes continuously sampled EEG signals within fixed time windows to learn temporal dynamics and spatial patterns. However, its computational cost is tightly coupled to the input sampling rate; consequently, under high sampling rates or prolonged continuous monitoring, the overall overhead scales directly with the analysis duration. Long short-term memory (LSTM)-based models \cite{ref20,ref21} represent another common approach for EEG time series analysis, where sequence modeling is achieved through the recursive update of hidden states. Because these updates must adhere to temporal order, inference parallelization is severely constrained. Computation latency thus grows with sequence length, limiting both real-time performance and energy efficiency. Alternatively, graph convolutional network (GCN) methods, such as MSFR-GCN \cite{ref22}, utilize the spatial topology among electrodes for modeling. These approaches incorporate multi-scale spatial modeling and node interaction mechanisms, improving the representation of complex correlations across electrodes \cite{ref23,ref24}. While expressive, these models incur substantial overhead from graph aggregation and irregular access patterns, which stress the memory hierarchy.
+
+Overall, synchronous acquisition followed by dense computation couples computational cost to the input sampling rate, increasing power and latency as monitoring duration grows. Neural activity also motivates event-based representations because it is distributed and temporally structured. This biological motivation does not, by itself, establish that an asynchronous interface saves energy; the engineering benefit depends on whether model-generated sparse events actually suppress unnecessary data movement and state updates in hardware.
+
+Although model compression techniques such as pruning, quantization, and distillation reduce arithmetic costs to some extent \cite{ref25,ref26}, they fail to resolve the fundamental structural limitations of dense computation and global synchronization. This structural bottleneck becomes particularly acute for wearable EEG emotion recognition, which requires milliwatt power consumption and real-time responsiveness.
+
+Moreover, an event-driven model does not automatically yield event-triggered hardware execution. When sparse spikes are processed through continuously active datapaths and memory transfers, part of the algorithmic sparsity advantage can be lost. This motivates an explicit co-design of the encoded event representation, cross-domain transfer, spiking computation, and classification readout.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/Overview.eps}
+\caption{\textbf{Jointly optimized neuromorphic architecture for GALS event-driven inference.}
+EEG signals are transformed into spatial-spectral representations and processed by a lightweight dynamic adaptive spiking neural network model with depthwise separable convolution.
+Dense activations are encoded into sparse spike times via division-free time-to-first-spike and executed on an address-event representation-based accelerator for energy-efficient inference.
+A GALS architecture is adopted at the system level to coordinate event-driven operation between independent locally synchronous clock islands.}
+\label{fig:system_overview}
+\end{figure*}
+Spiking neural networks (SNNs) offer a bio-inspired, event-driven alternative to conventional artificial neural networks (ANNs) \cite{ref27}. Because SNN neurons emit spikes only when their membrane potential crosses a specific threshold, sparse activity can reduce computation and memory traffic \cite{ref28}. Several studies have demonstrated the feasibility of using SNNs for stress and emotion recognition on resource-constrained platforms \cite{ref29,ref30}. For example, Kumar et al. \cite{ref31} implemented an EEG decoding system using SNNs on neuromorphic processors to improve energy efficiency. Other work has shown that recurrent SNNs can model the time evolution of EEG signals \cite{ref32}, and that simplified spiking dynamics enable depression recognition directly on microcontrollers \cite{ref33}. Translating sparse model activity into wearable-hardware efficiency nevertheless requires the execution and data-movement paths to respond to event validity. In clocked implementations, inactive neurons alone do not prevent clocked state updates or memory-system activity, so the hardware organization determines how much of the algorithmic sparsity is exposed \cite{ref67,ref68}.
+
+To address this model--hardware gap, we propose a jointly optimized neuromorphic architecture for edge EEG inference. At the core of the algorithmic framework is the Dynamic Adaptive Spiking Neural Network (DA-SNN), a lightweight spiking architecture featuring a depthwise separable gating module (DSGM) that decouples spatial and channel saliency to reduce spatiotemporal redundancy. To translate model activity into hardware-compatible events, we introduce division-free time-to-first-spike (DF-TTFS) encoding coupled with an adaptive time-window mechanism. This design removes floating-point division from the inference-critical path. The resulting sparse event streams drive a custom globally asynchronous, locally synchronous (GALS) accelerator \cite{ref69}: two locally synchronous clock islands exchange address/timestamp events through a bundled-data Req/Ack interface, and local clock enables suppress unnecessary state updates in idle modules. Together, these elements define a cross-layer path from EEG-derived tensors to sparse events and GALS execution. We evaluate model performance and FPGA implementation under stated protocol and measurement boundaries, without assuming that the interface is cost-free or that total power is strictly proportional to event rate.
+
+
+\begin{figure*}[t]
+\hspace*{-2.8cm}
+\begin{minipage}{\dimexpr\textwidth+2.8cm\relax}
+\centering
+\includegraphics[width=\textwidth]{figures/DA-SNN.eps}
+\caption{\textbf{The proposed DA-SNN model framework.}
+The input is an EEG-derived dense tensor whose feature-channel axis contains temporally contiguous power spectral entropy maps and whose two spatial axes represent the electrode-topographic grid. DSGM combines depthwise-separable feature extraction with channel and spatial gating; the circled multiplication mark denotes element-wise multiplication, corresponding to the Hadamard product used in the main text. In labels of the form $C@H\times W$, the at sign separates the feature-channel count from the spatial height and width and does not denote an arithmetic operation. DWConv, depthwise convolution; PWConv, pointwise convolution; GAP, global average pooling; CAP, channel average pooling; BN, batch normalization; HSigmoid, Hard-Sigmoid; DF-TTFS, division-free time-to-first-spike; ATSNN, adaptive temporal spiking neural network. DF-TTFS converts the DSGM-refined dense feature tensor into a shape-matched spike-time representation before ATSNN classification. The half-size labels are schematic; exact dataset-specific dimensions, convolution parameters, and broadcasting rules are provided in the Supplementary Information.}
+{\small\noindent\textbf{Alt text:} A left-to-right schematic of DA-SNN. An EEG-derived topographic tensor passes through depthwise-separable feature extraction and parallel channel, spatial, and main feature paths, whose outputs are combined element-wise. The resulting dense feature tensor is converted to spike times and processed by successive spiking layers to produce the emotion-class output.\par}
+\label{fig:DA-SNN}
+\end{minipage}
+\end{figure*}
+
+\section{RESULTS}
+In this section, we evaluate the proposed DA-SNN and its GALS hardware architecture. We first outline the neuromorphic framework for EEG emotion recognition, highlighting the synergy between the algorithm and event-driven hardware. We then analyze the learning dynamics of the spiking model and evaluate its classification performance across five standard EEG benchmarks. Finally, we assess the model's robustness against noise and low-precision quantization, followed by an analysis of the hardware's energy efficiency and physical field-programmable gate array (FPGA) implementation.
+
+
+\subsection{Neuromorphic framework for EEG emotion recognition}
+
+The proposed system-level framework for wearable EEG emotion recognition integrates data preprocessing, model architecture, and hardware deployment (Fig.~\ref{fig:system_overview}). Continuous EEG recordings are first Z-score normalized and divided into non-overlapping outer windows. Within each outer window, power spectral entropy (PSE) is calculated over $N_f$ temporally contiguous bins; the electrode values in each bin are projected onto an $H\times W$ topographic grid and stacked to form a dense tensor in $\mathbb{R}^{N_f\times H\times W}$. Thus, the input feature-channel axis represents consecutive PSE maps, whereas EEG electrodes occupy positions on the two spatial axes. Trial-wise LDS smoothing and complete dataset-specific tensor definitions are provided in the Supplementary Information.
+
+The model then converts this dense EEG-derived tensor into sparse spike-time events. As shown in Fig.~\ref{fig:DA-SNN}, DA-SNN processes the tensor sequentially through DSGM for gated feature extraction, division-free TTFS encoding \cite{TTFS}, and an adaptive temporal spiking neural network (ATSNN) for classification. DSGM operates on dense-valued feature tensors; DF-TTFS defines the tensor-to-event boundary by mapping the refined activations to spike times before spiking inference.
+
+The DSGM module combines depthwise separable convolution with parallel channel and spatial gating to capture discriminative features across all dimensions. The backbone applies depthwise separable convolution to the input feature map $X \in \mathbb{R}^{C\times H\times W}$. For the first network input, $C=N_f$ denotes the stacked PSE temporal-bin maps, while $H$ and $W$ denote the height and width of the electrode-topographic grid; EEG electrodes are encoded as spatial locations rather than as the $C$ axis. In subsequent feature maps, $C$ denotes the learned feature-channel count:
+\begin{equation}
+F_{\mathrm{DS}} = f_{\mathrm{PW}}\!\bigl(f_{\mathrm{DW}}(X)\bigr),
+\label{eq:dsgm_backbone}
+\end{equation}
+where $f_{\mathrm{DW}}(\cdot)$ and $f_{\mathrm{PW}}(\cdot)$ denote depthwise and pointwise convolutions, respectively, and $F_{\mathrm{DS}}$ is the backbone output. Concurrently, a dual-path gating mechanism refines these features. The channel gate aggregates global spatial information through average pooling to form a descriptor $s \in \mathbb{R}^{C \times 1 \times 1}$, producing the channel weights $G_{\mathrm{ch}} \in \mathbb{R}^{C \times 1 \times 1}$:
+\begin{equation}
+\left\{
+\begin{aligned}
+s_c &= \frac{1}{HW}\sum_{i=1}^{H}\sum_{j=1}^{W}X_{c,i,j},\quad c=1,\dots,C\\[0.5mm]
+\sigma(x) &= \mathrm{clip}\!\left(\frac{x}{8}+0.5,\,0,\,1\right)\\[0.5mm]
+G_{\mathrm{ch}} &= \sigma\!\left(f_{\mathrm{conv}}^{1\times1}(s_c)+b_{\mathrm{ch}}\right)
+\end{aligned}
+\right.,
+\label{eq:dsgm_ch_gate}
+\end{equation}
+where $b_{\mathrm{ch}}$ is the bias and $\sigma(\cdot)$ is the Hard-Sigmoid function. Similarly, the spatial gate compresses the channel dimension by computing the mean across all channels, yielding a 2D descriptor $M \in \mathbb{R}^{1 \times H \times W}$ and spatial weights $G_{\mathrm{sp}} \in \mathbb{R}^{1 \times H \times W}$:
+\begin{equation}
+\left\{
+\begin{aligned}
+M &= \frac{1}{C}\sum_{c=1}^{C}X_c\\[0.5mm]
+G_{\mathrm{sp}} &= \sigma\!\left(f_{\mathrm{conv}}^{3\times3}(M)+b_{\mathrm{sp}}\right)
+\end{aligned}
+\right.,
+\label{eq:dsgm_sp_gate}
+\end{equation}
+where $b_{\mathrm{sp}}$ is the bias. The backbone features are then modulated by these learned weights through element-wise multiplication, followed by batch normalization and ReLU activation:
+\begin{equation}
+F_{\mathrm{out}} = f_{\mathrm{ReLU}}\!\Bigl(f_{\mathrm{BN}}\bigl(F_{\mathrm{DS}}\odot G_{\mathrm{ch}}\odot G_{\mathrm{sp}}\bigr)\Bigr),
+\label{eq:dsgm_out}
+\end{equation}
+where $\odot$ denotes element-wise multiplication. At fusion, the channel gate is broadcast over the two spatial axes and the spatial gate is broadcast over the feature-channel axis; both gates are generated at a feature resolution compatible with $F_{\mathrm{DS}}$. The complete kernel, stride, padding, grouping, dataset-specific shape, and broadcasting specifications are provided in the Supplementary Information.
+
+\begin{table*}[t]
+\centering
+\hspace*{-2.8cm}
+\begin{minipage}{1.2\textwidth}
+\caption{Subject-dependent performance under a random window-level 80/20 evaluation protocol (Acc, accuracy; F1, macro-F1; Spe, macro-specificity).}
+\label{tab:overall_15models}
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{1.3}
+\footnotesize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l*{15}{c}}
+\toprule
+\multirow{2}{*}{Method}
+& \multicolumn{3}{c}{SEED}
+& \multicolumn{3}{c}{SEED-IV}
+& \multicolumn{3}{c}{SEED-V}
+& \multicolumn{3}{c}{DEAP}
+& \multicolumn{3}{c}{DREAMER} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}\cmidrule(lr){11-13}\cmidrule(lr){14-16}
+& {Acc(\%)} & {F1(\%)} & {Spe(\%)}
+& {Acc(\%)} & {F1(\%)} & {Spe(\%)}
+& {Acc(\%)} & {F1(\%)} & {Spe(\%)}
+& {Acc(\%)} & {F1(\%)} & {Spe(\%)}
+& {Acc(\%)} & {F1(\%)} & {Spe(\%)} \\
+\midrule
+RF\cite{ref52} & 91.91 & 91.65 & 93.30 & 89.85 & 87.86 & 92.30 & 89.23 & 87.82 & 91.98 & 79.43 & 76.31 & 92.58 & 86.14 & 81.34 & 92.22 \\
+k-NN\cite{ref53} & 90.82 & 89.90 & 92.12 & 89.05 & 87.71 & 92.26 & 87.91 & 87.24 & 91.27 & 82.75 & 79.86 & 90.20 & 88.88 & 88.02 & 91.89 \\
+XGBoost\cite{ref54} & 88.11 & 86.60 & 90.72 & 86.27 & 85.37 & 91.35 & 88.41 & 85.20 & 92.30 & 75.26 & 75.47 & 91.21 & 85.56 & 85.46 & 89.95 \\
+SqueezeNet\cite{ref57} & 94.04 & 93.31 & 96.58 & 92.35 & 92.63 & 97.44 & 90.37 & 91.29 & 97.68 & 67.74 & 73.00 & 85.38 & 91.08 & 90.17 & 96.64 \\
+MobileNetV3-Small\cite{ref58} & 93.40 & 90.14 & 94.23 & 92.61 & 93.52 & 97.51 & 91.91 & 91.66 & 94.66 & 84.11 & 82.92 & 94.53 & 89.24 & 89.21 & 96.29 \\
+MobileNetV3-Large\cite{ref58} & 90.85 & 91.76 & 92.66 & 90.34 & 88.88 & 94.87 & 89.73 & 88.36 & 88.94 & 86.29 & 82.59 & 92.17 & 91.63 & 91.37 & \textbf{97.62} \\
+ShuffleNetV2\cite{ref59} & 91.01 & 92.43 & 95.51 & 93.71 & 92.61 & 97.91 & 90.22 & 91.22 & 95.47 & 77.21 & 77.17 & 92.02 & 92.85 & \textbf{92.88} & 97.49 \\
+EfficientNet-B0\cite{ref60} & 95.35 & 94.60 & 97.67 & 92.16 & 92.34 & 97.34 & 91.65 & 93.34 & 97.58 & 83.92 & 83.90 & 94.43 & 88.35 & 87.54 & 94.04 \\
+EfficientNet-B3\cite{ref60} & 96.03 & 95.58 & 98.02 & 92.96 & 93.58 & 97.60 & 91.19 & 91.35 & 96.96 & 70.14 & 72.71 & 89.35 & 85.54 & 86.09 & 92.56 \\
+Deep ConvNet\cite{ref55} & 95.88 & 94.91 & 97.93 & 92.48 & 92.06 & 97.46 & 90.51 & 89.58 & 97.63 & 82.19 & 84.10 & 89.99 & 89.81 & 90.53 & 94.95 \\
+Shallow ConvNet\cite{ref55} & 92.27 & 94.18 & 96.15 & 89.49 & 90.32 & 96.12 & 85.78 & 87.69 & 96.20 & 80.58 & 79.85 & 89.79 & 83.61 & 82.80 & 86.28 \\
+EEGNet\cite{ref56} & 91.34 & 91.89 & 95.67 & 88.03 & 83.46 & 90.99 & 86.08 & 85.65 & 93.89 & 81.75 & 80.18 & 91.02 & 86.45 & 85.97 & 88.19 \\
+EESCN\cite{ref61} & 96.08 & 94.85 & 98.04 & 92.60 & 92.54 & 97.15 & 89.01 & 90.15 & 95.91 & 87.65 & 86.55 & 94.82 & 92.32 & 91.84 & 97.27 \\
+DH-SNN\cite{ref62} & 96.54 & 95.75 & \textbf{98.40} & 93.08 & 91.44 & 98.27 & 91.51 & \textbf{94.42} & 97.16 & 75.75 & 78.24 & 88.85 & 89.89 & 90.78 & 96.59 \\
+\textbf{DA-SNN} & $\mathbf{96.85 \pm 1.44}$ & $\mathbf{96.81 \pm 0.92}$ & $97.08 \pm 0.87$ & $\mathbf{93.87 \pm 5.99}$ & $\mathbf{94.10 \pm 5.30}$ & $\mathbf{98.35 \pm 3.59}$ & $\mathbf{92.10 \pm 6.33}$ & $93.31 \pm 5.77$ & $\mathbf{97.72 \pm 3.89}$ & $\mathbf{87.96 \pm 5.44}$ & $\mathbf{86.83 \pm 8.53}$ & $\mathbf{97.62 \pm 3.20}$ & $\mathbf{94.18 \pm 2.20}$ & $91.73 \pm 2.56$ & $94.38 \pm 4.64$ \\
+\bottomrule
+\end{tabular}
+}
+\vspace{2pt}
+
+\footnotesize\textit{Note:} The split unit is the outer window; subjects and trials may occur in both training and held-out evaluation partitions. Accuracy is window-level accuracy, macro-F1 is the unweighted mean of per-class F1, and macro-specificity is the unweighted mean of one-versus-rest specificity. DA-SNN values are mean $\pm$ sample standard deviation across repeated runs; baseline point estimates are shown as available. Bold metric values indicate the best result for each dataset and metric. Full preprocessing, split, checkpoint-selection, and aggregation details are provided in the Supplementary Methods.
+\end{minipage}
+\end{table*}
+
+Conventional neuron models such as Leaky Integrate-and-Fire (LIF) \cite{ref30} require recurrent membrane updates and decay operations. ATSNN instead adopts the B1-model of Stanojevi\'{c} et~al. \cite{ref46} as its spike-time neuron substrate; the B1-model itself is not introduced here as a new neuron model. We inherit its piecewise-linear, constant-slope dynamics, single-spike representation, and cascaded layer-wise windows, while adapting the temporal-window regulation to the EEG-oriented DA-SNN pipeline. For layer $n$, the half-open window is $[T_{\min}^{(n)},T_{\max}^{(n)})$, with $T_{\min}^{(n)}=T_{\max}^{(n-1)}$. The membrane potential $V_i^{(n)}(t)$ of neuron $i$ is governed by
+\begin{equation}
+\label{eq:b1_dynamics}
+\epsilon \frac{dV_i^{(n)}}{dt} =
+\begin{cases}
+\displaystyle \sum\nolimits_j W_{ij}^{(n)} H\!\left(t-T_j^{(n-1)}\right), & t < T_{\min}^{(n)},\\[0.4em]
+1, & T_{\min}^{(n)} \le t < T_{\max}^{(n)}.
+\end{cases}
+\end{equation}
+Here $j$ indexes presynaptic neurons, $W_{ij}^{(n)}$ is the synaptic weight, $T_j^{(n-1)}$ is the presynaptic spike time, and $H(\cdot)$ is the Heaviside function. The firing threshold $\vartheta_i^{(n)}$ is expressed in normalized membrane-potential units, while $\epsilon>0$ converts the threshold term into a temporal offset. Integrating Eq.~(\ref{eq:b1_dynamics}) gives the theoretical threshold-crossing time $\tilde{T}_i^{(n)}$; an explicit timeout rule then determines whether this crossing is an active spike:
+\begin{equation}
+\label{eq:b1_combined}
+\left\{
+\begin{aligned}
+\tilde{T}_i^{(n)} &= T_{\min}^{(n)} + \epsilon \vartheta_i^{(n)} + \sum\nolimits_j W_{ij}^{(n)}\!\left(T_j^{(n-1)} - T_{\min}^{(n)}\right), \\
+M_i^{(n)} &= \mathbf{1}\!\left[\tilde{T}_i^{(n)} < T_{\max}^{(n)}\right], \\
+T_i^{(n)} &= M_i^{(n)}\tilde{T}_i^{(n)} + \left(1-M_i^{(n)}\right)T_{\max}^{(n)}.
+\end{aligned}
+\right.
+\end{equation}
+The first line is the closed-form threshold-crossing time, whereas the latter two lines define censoring at the upper boundary. The strict inequality makes a crossing at $T_{\max}^{(n)}$ inactive; $T_i^{(n)}=T_{\max}^{(n)}$ is therefore a numerical placeholder whose validity is determined by $M_i^{(n)}$. Because the next layer starts at this same boundary, a censored placeholder contributes zero temporal offset. Under the original B1 identity parameterization ($A_i^{(n)}=0$ and $B_i^{(n)}=1$) and its associated mapping assumptions, spike latency corresponds exactly to a ReLU activation. We use this property as the rationale for selecting a hardware-amenable neuron substrate, while the methodological contribution of DA-SNN lies in its EEG-specific DSGM, power-of-two DF-TTFS encoding, midpoint-referenced temporal regulation, and GALS accelerator co-design.
+
+Continuous DSGM features are converted into sparse spike times for the downstream ATSNN using TTFS coding, which maps stronger activations to earlier spikes. While standard TTFS normalizes input activation $V_{\mathrm{in}}$ via division:
+\begin{equation}
+V_{\mathrm{norm}} = \frac{V_{\mathrm{in}} - V_{\min}}{V_{\max} - V_{\min}}.
+\label{eq:standard_ttfs}
+\end{equation}
+where $V_{\min}$ and $V_{\max}$ denote the minimum and maximum bounds, we implement a DF-TTFS encoder that adapts to the dynamic range. The complete encoding process is:  
+\begin{equation}
+\left\{
+\begin{aligned}
+S_p &= 2^{\left\lceil \log_2\!\left(\max\!\left(V_{\max}-V_{\min},\delta\right)\right) \right\rceil}, \qquad \delta>0, \\
+V_{\mathrm{norm}} &= \mathrm{clip}\left(\frac{V_{\mathrm{in}}-V_{\min}}{S_p}, 0, 1\right) \\
+T_{\mathrm{spike}} &= T_{\max} - \mathrm{round}\left(V_{\mathrm{norm}} (T_{\max}-T_{\min})\right)
+\end{aligned}
+\right.,
+\label{eq:ttfs_div_free}
+\end{equation}
+where $S_p$ is the power-of-two scaling factor, $\delta$ is a positive numerical safeguard for a zero or near-zero activation range, $\mathrm{clip}(\cdot)$ clamps values to $[0,1]$, and $T_{\mathrm{spike}}$ is the discrete spike time.
+
+For an active neuron, the local weight gradient contains a presynaptic temporal-offset term:
+\begin{equation}
+\frac{\partial L}{\partial W_{ij}^{(n)}} = \frac{\partial L}{\partial T_i^{(n)}} \cdot \left(T_j^{(n-1)} - T_{\min}^{(n)}\right).
+\label{eq:grad_w}
+\end{equation}
+This local relation motivates regulating the range of presynaptic spike times. ATSNN monitors the earliest valid spike time $T_{e}^{(n)}$ in layer $n$ and updates the upper bound of the temporal window as
+\begin{equation}
+T_{\max}^{(n)\prime} = T_{\max}^{(n)} + \lambda\!\left(T_{e}^{(n)} - \frac{T_{\max}^{(n)} + T_{\min}^{(n)}}{2}\right),
+\label{eq:atsnn_update}
+\end{equation}
+where $\lambda$ controls the adaptation rate. Stanojevi\'{c} et~al. also adapt the upper window boundary during training, but their B1 rule is conditional and upper-bound-oriented. Equation~(\ref{eq:atsnn_update}) instead uses the signed displacement of the earliest valid spike from the window midpoint, allowing the window to contract for early activity or expand for late activity. The updated bound propagates to the next layer through $T_{\min}^{(n+1)}=T_{\max}^{(n)\prime}$; if no valid spike is observed, the boundary is left unchanged (Supplementary Note~S2.3).
+
+The output layer is a continuous, nonspiking integrator. With the cascade condition $T_{\min}^{(L)}=T_{\max}^{(L-1)}$, an inactive hidden neuron has $T_j^{(L-1)}=T_{\min}^{(L)}$ and therefore contributes zero. The class-$i$ logit can consequently be written in equivalent observed-time and explicitly masked forms:
+\begin{equation}
+\begin{aligned}
+L_i
+&= \sum\nolimits_j W_{ij}^{(L)}\!\left(T_{\min}^{(L)} - T_j^{(L-1)}\right) + \epsilon \vartheta_i^{(L)} \\
+&= \sum\nolimits_j W_{ij}^{(L)} M_j^{(L-1)}\!\left(T_{\min}^{(L)} - \tilde{T}_j^{(L-1)}\right) + \epsilon \vartheta_i^{(L)}.
+\end{aligned}
+\label{eq:out_logit}
+\end{equation}
+Thus, a censored $T_{\max}$ placeholder is not interpreted as a late spike. The network predicts the class with the highest logit.
+
+
+\subsection{Emotion Recognition Performance Across EEG Benchmarks}
+
+Main Table~\ref{tab:overall_15models} reports the subject-dependent benchmark on five standard EEG emotion-recognition datasets using a random window-level 80/20 split, enabling comparison of 15 models under a common evaluation setting. Complementary subject-independent evaluations---LOSO for SEED, SEED-IV, and SEED-V, and five fixed subject-holdout splits for DEAP and DREAMER---are described in the Supplementary Methods and reported in Supplementary Tables~S4 and S5. The two settings address different evaluation objectives, and their absolute values are not directly comparable.
+
+DA-SNN achieves the highest accuracy on all five subject-dependent benchmarks (Table~\ref{tab:overall_15models}): $96.85 \pm 1.44\%$ on SEED, $93.87 \pm 5.99\%$ on SEED-IV, $92.10 \pm 6.33\%$ on SEED-V, $87.96 \pm 5.44\%$ on DEAP, and $94.18 \pm 2.20\%$ on DREAMER. This accuracy advantage is retained across three- to five-class categorical emotion tasks and the valence--arousal tasks in DEAP and DREAMER. Macro-F1 and macro-specificity also remain competitive, although metric-wise leadership varies across datasets; accordingly, we base the cross-dataset performance claim on the consistently highest accuracy rather than on uniform dominance of every metric.
+
+Cross-dataset ablations further separate the roles of the principal components (Supplementary Table~S6). Across five random seeds, replacing the adaptive temporal window with fixed windows reduces mean accuracy by 4.98, 10.75, and 0.83 percentage points on SEED, DEAP, and DREAMER, respectively. Removing DSGM also lowers the corresponding mean accuracies, although the effect is substantially smaller on DREAMER, indicating dataset-dependent rather than uniform gains. By contrast, conventional min--max normalization changes mean accuracy by only $+0.06$, $-1.07$, and $+0.66$ points relative to DF-TTFS across the three datasets. We therefore interpret DF-TTFS primarily as a hardware-oriented encoding that removes floating-point division, not as a component intended to improve classification accuracy. A representative SEED training trajectory additionally shows that the two hidden-layer temporal boundaries evolve to distinct ranges and settle during late training (Supplementary Fig.~S3).
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/robustness_quantization_comparison.png}
+\caption{
+\textbf{Sensitivity to controlled EEG perturbations, weight quantization, and model complexity.}
+\textbf{(a)} Single-seed accuracy of DA-SNN, DH-SNN, and EEGNet on SEED, DEAP, and DREAMER under Gaussian noise, low-frequency drift, and EMG-like transient bursts. Perturbations were added to time-domain EEG samples before PSE extraction, spatial mapping, and LDS smoothing. Relative noise level (NL) denotes the ratio of the perturbation standard deviation to the clean signal standard deviation within each channel; Clean denotes NL$=0$. Endpoint annotations report $\Delta\mathrm{Acc}=\mathrm{Acc}_{\mathrm{NL}=0.125}-\mathrm{Acc}_{\mathrm{Clean}}$ in percentage points.
+\textbf{(b)} SEED accuracy in a QAT-based weight-bit-width sweep from 32 to 4 bits.
+\textbf{(c)} Performance comparison of DA-SNN with representative lightweight models. FLOPs and parameter counts are normalized.
+}
+\label{fig:robust_quant_comparison}
+\end{figure*}
+
+\begin{table}[b]
+\caption{Model-level efficiency analysis of comparison classifiers. The parameter, operation, memory, and power results characterize model inference on the Raspberry Pi~5 platform; FPGA implementation results are reported separately in the Hardware Implementation section.}
+\label{tab:efficiency}
+
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.3}
+\scriptsize
+
+\sisetup{
+  table-number-alignment=center,
+  parse-numbers=true,
+  detect-weight=true % 允许 S 列直接识别底部加粗的字体
+}
+% 将宽度限制为 0.96\columnwidth，右侧留出安全空隙，防止与右边分栏文本重叠
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}l
+S[table-format=3.2, table-space-text-post={~M}] % 为可能出现的 M 预留对齐空间
+S[table-format=3.2, table-space-text-post={~M}]
+S[table-format=3.2, table-space-text-post={~M}]
+S[table-format=3.2, table-space-text-post={~MB}]
+S[table-format=3.2, table-space-text-post={~MB}]
+S[table-format=3.2]@{}}
+\toprule
+\textbf{Model}
+& {\textbf{Params (K)}}
+& {\textbf{FLOPs (K)}}
+& {\textbf{\makecell{Mult-\\Adds (K)}}} 
+& {\textbf{\makecell{Param\\Size (KB)}}} 
+& {\textbf{RAM (KB)}} 
+& {\textbf{Power (mW)}} \\
+\midrule
+
+SqueezeNet        &   4.12 & 259.97 & 129.98 &  16.09 &  50.43 & 368.33 \\
+MobileNetV3-Small &  26.43 & 993.12 & 496.56 & 103.23 & 392.44 & 458.33 \\
+MobileNetV3-Large & 543.90 &   9.69{~M} &   4.85{~M} &   2.07{~MB} &   3.53{~MB} & 546.35 \\
+ShuffleNetV2      & 244.22 &   3.49{~M} &   1.74{~M} & 953.98 &   1.38{~MB} & 426.85 \\
+EfficientNet-B0   &   1.07{~M} &  11.99{~M} &   6.00{~M} &   4.10{~MB} &   5.28{~MB} & 437.84 \\
+EfficientNet-B3   &   1.38{~M} &  15.32{~M} &   7.66{~M} &   5.27{~MB} &   6.93{~MB} & 524.62 \\
+Deep ConvNet      & 239.48 &   1.87{~M} & 936.20 & 935.46 & 995.98 & 435.53 \\
+Shallow ConvNet   &  14.28 & 350.08 & 175.04 &  55.79 &  85.07 & 258.37 \\
+EEGNet            &   2.72 &  87.55 &  43.78 &  10.64 &  41.04 & 334.86 \\
+EESCN             &  11.08{~M} & 308.59{~M} & 154.29{~M} &  42.27{~MB} & 225.12 & 776.79 \\
+DH-SNN            & 152.58 & 476.00 & 235.96 & 587.01 & 260.89 & 236.49 \\
+
+\midrule
+\bfseries DA-SNN (FP32)
+ & \bfseries 12.76 
+ & \bfseries 32.47 
+ & \bfseries 16.23 
+ & \bfseries 49.83 
+ & \bfseries 51.27 
+ & \bfseries 236.68 \\
+
+\bfseries DA-SNN (INT8)
+ & \bfseries 12.76 
+ & {--} 
+ & \bfseries 16.23 
+ & \bfseries 12.50 
+ & \bfseries 13.68  
+ & \bfseries 184.14 \\
+\bottomrule
+\end{tabular}%
+} 
+\end{table}
+
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/hardoverview.png}
+\caption{\textbf{Hardware architecture and main components of the proposed accelerator.}
+(a) System-level organization of the globally asynchronous, locally synchronous (GALS) accelerator. Blue solid lines trace tensor data from the streaming INT8 tensor compute engine (TCE) to the division-free time-to-first-spike (DF-TTFS) encoder; orange solid lines trace address-event representation (AER) spike events, each carrying an address and timestamp, through the compute-unit/processing-element (CU/PE) arrays and the hidden-layer recirculation path. Purple dashed lines denote request/acknowledgment (Req/Ack) handshaking, green dash-dotted lines denote control/status, and black thin lines denote memory access. The tensor pipeline through DF-TTFS belongs to the local \texttt{clk\_TCE} island, whereas the lower weight memory, CU/PE arrays, and spike collector belong to the independent \texttt{clk\_SNN} island; the AER block forms the composite clock-domain-crossing boundary.
+(b) Line Buffer based on shift registers supporting continuous sliding window reconstruction for pipelined convolution.
+(c) Hardware realization of the DF-TTFS encoder with bit shift normalization and event detection for address-event representation (AER) spike output.
+(d) Microarchitecture of the event-driven PE illustrating time-modulated membrane-potential integration and local clock-enable control. The single GALS Flow Controller coordinates start/enable, completion, and layer/array-enable state without carrying tensor or event payloads or distributing a shared execution clock.}
+\label{fig:hardoverview}
+\end{figure*}
+{\small\noindent\textbf{Alt text:} A four-panel hardware diagram. Panel (a) traces dense INT8 tensor data through the \texttt{clk\_TCE} island to the DF-TTFS tensor-to-event conversion, then traces address/timestamp spike events across a Req/Ack AER boundary into the independent \texttt{clk\_SNN} island. Events drive CU/PE computation, hidden-layer events recirculate through the spike collector and AER path, and final membrane potentials pass to a decision unit. Panels (b)--(d) detail the line buffer, encoder, and event-driven PE.\par}
+
+\subsection{Sensitivity to Controlled EEG Perturbations and Quantization}
+
+We assessed sensitivity to controlled signal corruption on SEED, DEAP, and DREAMER using additive Gaussian noise, low-frequency drift, and EMG-like transient bursts (Fig.~\ref{fig:robust_quant_comparison}a). Each perturbation was applied to time-domain EEG samples after dataset-specific signal conditioning and segmentation but before PSE extraction, spatial mapping, and LDS smoothing. The relative noise level was defined per channel as $\mathrm{NL}=\sigma_{\mathrm{noise}}/\sigma_{\mathrm{signal}}$ and varied over $\{0.01,0.03,0.05,0.08,0.10,0.125\}$. For each noisy feature bundle, DA-SNN, DH-SNN, and EEGNet were trained, selected, and evaluated using the same random window-level 80/20 protocol and random seed. At NL$=0.125$, the clean-to-noisy accuracy decrease of DA-SNN ranged from 3.71 to 9.37 percentage points across the nine dataset--perturbation combinations, compared with 7.13--15.61 points for DH-SNN and 5.09--11.40 points for EEGNet. Thus, DA-SNN showed the smallest endpoint decrease in all nine comparisons. Because these tests used a single seed and noise-matched training rather than a fixed clean-trained checkpoint, they provide descriptive evidence of lower sensitivity under controlled corruption, not statistical significance or zero-shot robustness in wearable recordings.
+
+We further examined sensitivity to weight quantization by reducing weight precision from 32-bit floating point to 16, 12, 8, 6, and 4 bits using quantization-aware training (Fig.~\ref{fig:robust_quant_comparison}b). Accuracy changed from 96.98\% at 32 bits to 96.94\% at 8 bits, a decrease of 0.04 percentage points. The 6-bit configuration achieved 95.37\%, whereas accuracy fell to 77.81\% at 4 bits. These results support the selected 8-bit weight configuration under the evaluated SEED protocol but do not imply equivalent behavior at arbitrary lower precision. The deployed integer model uses signed INT8 weights and unsigned 8-bit nonnegative activations, as detailed in the Supplementary Information.
+
+\subsection{Computational Efficiency and Energy Consumption}
+
+We analyze the computational efficiency of the proposed architecture in terms of model scale, inference cost, and memory footprint, measuring practical power consumption directly on a Raspberry Pi 5 platform. The network contains only 12.76~K parameters (Table~\ref{tab:efficiency}), requiring significantly fewer resources than standard lightweight models such as MobileNetV3-Large and EfficientNet-B0 while preserving recognition performance.
+
+Because the network executes event-driven inference using TTFS encoding, neurons fire at most once per cycle. This yields an empirical average firing rate of 35.26\%, which reduces the effective inference cost from a theoretical maximum of 32.47~K floating-point and 16.23~K multiply-accumulate operations down to 16.41~K and 8.21~K, respectively. The sparsity introduced by this temporal encoding minimizes runtime operations by restricting computation strictly to valid spike events. For the 32-bit floating-point model, parameter storage and runtime memory require 49.83~KB and 51.27~KB, respectively. Applying 8-bit integer quantization compresses these requirements to 12.50~KB and 13.68~KB. This quantized configuration meets stringent embedded constraints and achieves a measured energy consumption of just 261.21~$\mu$J per inference. Ultimately, the network balances recognition accuracy with low computational demand (Fig.~\ref{fig:robust_quant_comparison}c), satisfying the strict power and memory constraints of wearable deployment.
+
+
+
+\subsection{Hardware Implementation}
+
+To validate hardware execution of the framework, we implemented a heterogeneous accelerator for edge EEG inference. The design combines per-tensor 8-bit integer quantization with event-driven execution in a globally asynchronous, locally synchronous (GALS) organization (Supplementary Note~S2.4). It integrates a low-bitwidth datapath, a reconfigurable tensor-streaming subsystem, and a bundled-data clock-domain-crossing interface between two locally synchronous clock islands.
+
+The hybrid streaming and event-processing pipeline establishes an end-to-end data flow (Fig.~\ref{fig:hardoverview}a). Multi-channel data first stream into the on-chip input buffer via an SPI interface. The reconfigurable tensor compute engine (TCE), multi-branch fusion path, and DF-TTFS encoder operate in the local \texttt{clk\_TCE} island. A shift-register-based line buffer reconstructs sliding windows for pipelined convolution (Fig.~\ref{fig:hardoverview}b), after which the fused INT8 tensor enters DF-TTFS. The encoder is the representation boundary: it converts the dense tensor into sparse AER events whose payload contains an address and timestamp \cite{AER}. The AER block then acts as a composite interface: its sending side forms the event and request, the clock-domain-crossing (CDC) logic transfers the handshake, and its \texttt{clk\_SNN}-side routing and address decoding deliver the event to the lower weight memory and CU/PE arrays.
+
+Each cross-domain event uses a bundled-data four-phase handshake \cite{ref66}. The sender first stabilizes the address/timestamp bus and asserts Req. After the synchronized Req is observed in the \texttt{clk\_SNN} island, the required array is enabled and processes the event; completion causes Ack to be asserted. The sender then deasserts Req, the receiver deasserts Ack, and only then may the sender release or replace the payload. This stall behavior supplies backpressure without a dual-clock event FIFO. The single GALS Flow Controller coordinates start/enable, completion, and layer/array-enable state across the pipeline, but it neither carries the payload nor distributes a shared chip-wide execution clock. The detailed CDC sequence is provided in the Supplementary Information.
+
+We introduce several hardware design optimizations to improve efficiency. The accelerator integrates a streaming reconfigurable TCE that uses time multiplexing on shared compute resources to support multiple convolution variants, avoiding additional dedicated arithmetic units. The TCE consists of control logic, a shared multiply–accumulate array, an adder tree, and a multifunction activation unit. The datapath undergoes runtime reconfiguration when the workload transitions to the multibranch gating stage. During this phase, concurrent access by the main branch, channel gate, and spatial gate exceeds the port limits of standard dual-port BRAMs, leading to structural hazards. We address this by implementing a multibank buffer that supports one write stream and three read streams per pipeline stage. To further reduce pipeline depth, the output stage incorporates fused logic that performs batch normalization, quantization, and activation within a single datapath.
+
+The division-free encoding module forms the tensor-to-event boundary while remaining within the \texttt{clk\_TCE} island. It eliminates the floating-point division used in conventional TTFS encoders: by constraining the scaling factor $S_p$ to a power of two ($S_p=2^k$) during quantization-aware training, a barrel shifter implements the division as a right shift. As illustrated in Fig.~\ref{fig:hardoverview}c, bit-shift normalization and event-valid detection generate address/timestamp events directly from INT8 features. The resulting combinational datapath computes spike latencies within a single local clock cycle.
+
+To address frequent weight access and sparse neural activity in SNN inference, the \texttt{clk\_SNN} island adopts a memory-centric array architecture. Co-locating weight storage with computation alleviates bandwidth pressure and reduces data movement. The compute fabric is partitioned into 16 independent SNN arrays, each containing four event-driven processing elements. The microarchitecture of each PE, shown in Fig.~\ref{fig:hardoverview}d, performs time-modulated membrane-potential integration under a local finite-state machine and register clock enable. The AER interface broadcasts events to the active arrays; hidden-layer events follow the CU/PE--spike-collector--AER--CU/PE recirculation path for time-multiplexed execution of subsequent layers. The spike collector is not the final classifier: final-layer 32-bit membrane potentials are sent to a separate comparator-tree decision unit, which outputs the argmax class label.
+
+To evaluate hardware deployment, we implemented the INT8 model on a Xilinx Zynq-7020 SoC. The accelerator resides in the programmable logic and operates at 100~MHz with a 1.0~V core supply voltage. Resource utilization reported in the Supplementary Information confirms the compact hardware footprint of the design. Look-up table and flip-flop utilization remain low at 20.34\% and 7.67\%, respectively, leaving margin for future architectural scaling. For one preprocessed-tensor accelerator inference, the GALS implementation achieves a latency of 18~$\mu$s and consumes 40~mW of dynamic power and 108~mW of static power, giving 148~mW total power and 2.66~$\mu$J total-power energy per inference. PSE and LDS preprocessing are not included in this accelerator-side boundary.
+
+We additionally implemented a matched synchronous version of the same INT8 DA-SNN on the same FPGA using the same input tensor and clock-enable policy. As summarized in Table~\ref{tab:matched_fpga_main}, the GALS implementation reduces total energy from 3.35 to 2.66~$\mu$J per inference, while latency increases from 16.5 to 18~$\mu$s. The complete resource, timing, interface-latency, and measurement-boundary results are reported in the Supplementary Information.
+
+\begin{table}[t]
+\centering
+\caption{Matched FPGA implementation comparison for the same INT8 DA-SNN. Both implementations use the same Zynq-7020 platform and input tensor. Energy per inference is calculated using total power.}
+\label{tab:matched_fpga_main}
+\scriptsize
+\renewcommand{\arraystretch}{1.18}
+\setlength{\tabcolsep}{2.5pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Implementation & Latency & Dynamic power & Static power & Total power & Energy/inference \\
+\midrule
+Synchronous FPGA & 16.5~$\mu$s & 96~mW & 107~mW & 203~mW & 3.35~$\mu$J \\
+GALS FPGA & 18~$\mu$s & 40~mW & 108~mW & 148~mW & 2.66~$\mu$J \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+
+\section{DISCUSSION}
+Overall, the results suggest that the strength of the proposed framework lies in cross-layer co-design rather than in any single architectural component \cite{ref71}. Across five EEG emotion-recognition benchmarks, the framework maintains strong performance under different emotional granularities and subject conditions. In the controlled single-seed perturbation tests, DA-SNN showed a smaller endpoint accuracy decrease than DH-SNN and EEGNet in all nine dataset--perturbation combinations, while the 8-bit weight setting differed from its 32-bit counterpart by only 0.04 percentage points. These observations support deployment-oriented evaluation under the tested conditions without establishing robustness to uncontrolled wearable artifacts.
+
+The ablation and diagnostic results clarify the complementary but distinct roles of the main algorithmic components. Removing DSGM reduces mean accuracy on all three ablation datasets, but the magnitude varies substantially, so its empirical contribution is dataset dependent. DF-TTFS converts dense features into sparse spike times using power-of-two scaling; because conventional min--max normalization produces mixed accuracy differences across datasets, the supported contribution is the removal of floating-point division from the hardware path rather than a universal accuracy gain. For ATSNN, the recorded training trajectory shows that the two hidden layers learn different temporal ranges and settle during late training, while the fixed-window ablation yields lower mean accuracy on all three datasets. Together, these results support component-specific roles in feature selection, hardware-oriented event encoding, and temporal adaptation.
+
+The efficiency mechanisms act at three distinct levels. First, the measured 35.26\% average firing rate reflects model-induced event sparsity, reducing the number of AER transfers, weight reads, and membrane-potential updates. Second, event-triggered execution and data movement activate routing, memory access, and CU/PE computation only for valid events. Third, local register clock enables hold completed or inactive datapaths in an idle state, reducing unnecessary clocked-state and datapath switching; this mechanism concerns dynamic switching rather than static power. INT8 quantization separately provides 4$\times$ compression in parameter storage and runtime memory, reducing them to 12.50~KB and 13.68~KB, respectively. These mechanisms do not make the GALS boundary cost-free: the top-level hierarchical synthesis resolves the resource and functional-latency contributions of event filtering, AER routing, address decoding, Req/Ack synchronizers, handshake state machines, and clock-enable control, as detailed in the Supplementary Information. Component-level dynamic power is not separately resolved and is therefore not assigned an unsupported share of the measured accelerator power.
+
+The matched synchronous implementation separates the observed GALS trade-off from the Raspberry Pi comparison in Table~\ref{tab:efficiency}, which remains a model-level general-purpose-platform evaluation. Under the matched FPGA conditions, GALS incurs modest logic and latency overhead but reduces total energy per inference by 20.6\%. This result supports a net energy advantage for the present implementation; it does not establish that asynchronous organization is universally superior or that total dynamic power is strictly proportional to event rate.
+
+Several limitations remain. The perturbation analysis used synthetic signal-level corruption and one random seed, with a separate noise-matched training and model-selection run for each condition. It therefore does not measure statistical variability across seeds, zero-shot degradation of a fixed clean-trained model, or performance on recordings containing naturally occurring wearable artifacts. Long-term deployment will introduce additional variability from electrode contact changes, motion, sweat, and subject-specific state shifts. Future work should evaluate fixed-model robustness on recorded artifact datasets, quantify cross-seed uncertainty, and investigate online calibration and adaptive event-generation thresholds. Migrating the current FPGA prototype to an ASIC implementation would further clarify the achievable area and power envelope for continuous wearable affective monitoring.
+
+\section{CONCLUSION}
+This work presents an end-to-end neuromorphic co-design for low-power wearable EEG emotion recognition. By combining sparse temporal encoding, spiking inference, and GALS hardware execution, the proposed framework preserves strong recognition performance across five benchmark datasets. Controlled perturbation tests further show lower endpoint sensitivity than two matched baselines across the evaluated dataset--noise combinations, and the 8-bit weight setting retains accuracy within 0.04 percentage points of the 32-bit result on SEED. Within these experimental boundaries, affective EEG-derived features can be processed as sparse events with limited loss of recognition performance, providing a deployment-oriented alternative to synchronous dense computation.
+
+Efficiency gains are observed at both the model and hardware levels. The INT8 network requires only 12.50~KB of parameter storage and 13.68~KB of runtime memory and consumes 261.21~$\mu$J per inference on Raspberry Pi~5. Within the accelerator-inference boundary, the GALS FPGA implementation reports 18~$\mu$s latency, 40~mW dynamic power, and 2.66~$\mu$J total-power energy per inference; the matched synchronous implementation requires 3.35~$\mu$J. These results show a practical mapping from algorithmic sparsity to event-triggered hardware activity under the evaluated implementation conditions, while PSE/LDS preprocessing and component-level interface power remain outside the reported accelerator-side energy breakdown.
+
+\section{METHODS}
+Main Table~\ref{tab:overall_15models} uses a subject-dependent random window-level 80/20 evaluation protocol. Complementary subject-independent evaluations and full details of dataset composition, preprocessing, data splitting, model selection, and statistical aggregation are provided in the online Supplementary Information.
+
+\section{DATA AND CODE AVAILABILITY}
+The source code is available at \url{https://github.com/BhealthE6315/DA-SNN}.
+
+\section{FUNDING}
+This work was supported by the National Natural Science Foundation of China (No. 62227807).
+
+\bibliographystyle{nsr}
+\bibliography{nsr_sample}
+\end{document}

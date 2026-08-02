@@ -62,7 +62,7 @@
     22,
     26
   ],
-  "train_count": 12480,
-  "val_count": 2880,
-  "test_count": 2880
+  "train_count": 6240,
+  "val_count": 1440,
+  "test_count": 1440
 }
