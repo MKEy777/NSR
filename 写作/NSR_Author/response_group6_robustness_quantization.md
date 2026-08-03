@@ -1,5 +1,7 @@
 # Response Letter: Controlled EEG Perturbations and Quantization
 
+> **Superseded working draft.** The authoritative consolidated response is `response_to_reviewers.md`; status and risk tracking are in `response_tracker.md`. Do not submit this file separately.
+
 ## R3-3. Missing Reference Baselines for Robustness and Quantization
 
 **Reviewer comment:** *"Although the manuscript presents results under different conditions (e.g., noise or quantization), these evaluations are not compared against a clear reference baseline under the same settings. Including a simple baseline curve would make the robustness claims more convincing and easier to interpret."*
