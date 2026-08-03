@@ -1,5 +1,7 @@
 # Response Letter — Group 3: B1-model, Censored TTFS, Active Mask, and Output Readout
 
+> **Superseded working draft.** The authoritative consolidated response is `response_to_reviewers.md`; status and risk tracking are in `response_tracker.md`. Do not submit this file separately.
+
 ## Revision status
 
 The manuscript changes for Reviewer 4, Comments 8–14, 17, and 18 have been implemented in the main text and Supplementary Information. The responses below are ready for integration into the full response letter. Reviewer 4, Comments 15 and 16 are addressed in the completed Group 4 response.

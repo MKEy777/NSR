@@ -1,5 +1,7 @@
 # Response Letter: Fig. 4 Dataflow and GALS Control
 
+> **Superseded working draft.** The authoritative consolidated response is `response_to_reviewers.md`; status and risk tracking are in `response_tracker.md`. Do not submit this file separately.
+
 ## R1-4. Synchronous/Asynchronous Interaction, Handshake, and Efficiency Mechanisms
 
 **Reviewer comment:** *"The hardware section is not very easy to follow. In Fig. 4(a), the interaction between the synchronous and asynchronous parts is not clearly illustrated, and the handshake mechanism is only briefly mentioned. It is also not very clear how the claimed energy efficiency of the GALS design is achieved, for example, how it relates to event sparsity or clock gating."*

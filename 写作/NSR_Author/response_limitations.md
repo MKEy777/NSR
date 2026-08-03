@@ -1,5 +1,7 @@
 # Response Letter: Limitations Responses
 
+> **Superseded working draft.** This file contains pre-audit language and must not be submitted. The authoritative R2-1, R2-3, R2-4, R3-6, and R4-22 responses are in `response_to_reviewers.md`.
+
 ## L1. LDS Computational Cost and Real-Time Feasibility (R2-3)
 
 **Reviewer concern:** *"The methodology relies heavily on Linear Dynamical System (LDS) smoothing to filter the feature sequences across windows. LDS smoothing inherently requires observing sequences over time, which introduces significant computational latency, memory buffering, and complex matrix operations. The manuscript entirely fails to address how this computationally expensive, latency-inducing smoothing process is executed in real-time on the proposed resource-constrained edge hardware."*

@@ -1,5 +1,7 @@
 ﻿# Response Letter — Revision Group 2
 
+> **Superseded working draft.** The authoritative consolidated response is `response_to_reviewers.md`; status and risk tracking are in `response_tracker.md`. Do not submit this file separately.
+
 ## Fig. 2 and the EEG-to-feature-to-tensor-to-spike data flow
 
 ### Overview of the revision

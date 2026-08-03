@@ -878,7 +878,7 @@ FUNCTION {format.org.or.pub}
         'skip$
         { t empty$ address empty$ and
             'skip$
-            { ", " swap$ * * }
+            { ", " * }
           if$
           year "year" bibinfo.check
           *

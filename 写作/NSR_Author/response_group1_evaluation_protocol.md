@@ -1,5 +1,7 @@
 ﻿# Response Letter — Group 1: Evaluation Protocols, Data Splitting, Statistics, and Main Results
 
+> **Superseded working draft.** The authoritative consolidated response is `response_to_reviewers.md`; status and risk tracking are in `response_tracker.md`. Do not submit this file separately.
+
 ## Overview of the revision
 
 We thank the reviewers for identifying that the original manuscript did not distinguish the evaluation objectives, split units, and checkpoint-selection procedure with sufficient precision. In the revised manuscript, we retain the subject-dependent benchmark in Main Table 1 for like-for-like model comparison and add a separate subject-independent evaluation in the Supplementary Information to assess unseen-subject generalization. We have also added a dataset-wise protocol table and centralized descriptions of window construction, metadata, LDS scope, model selection, metric definitions, and statistical aggregation. The performance claims have been recalibrated to the evidence directly supported by each protocol.

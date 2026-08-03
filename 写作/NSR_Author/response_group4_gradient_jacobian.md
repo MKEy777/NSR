@@ -1,5 +1,7 @@
 # Response Letter — Group 4: Gradient-Stability Claim and Jacobian Diagnostics
 
+> **Superseded working draft.** Its unverified numerical diagnostic and missing image are excluded from the authoritative `response_to_reviewers.md`. Do not submit this file separately.
+
 ## Revision status
 
 The manuscript changes for Reviewer 4, Comments 15 and 16 have been implemented in the Abstract, the ATSNN description in the main text, the Discussion, and the Supplementary Information. The responses below are ready for integration into the full response letter.
