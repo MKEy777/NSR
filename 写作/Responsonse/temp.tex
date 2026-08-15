@@ -1,0 +1,674 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{orcidlink}
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{amsmath} 
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{biblatex}
+\usepackage{xcolor}
+\addbibresource{reference1.1.bib}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{caption} 
+\usepackage{hyperref}
+\captionsetup{justification=centerlast}  
+\usepackage{upgreek}
+\usepackage[switch,mathlines]{lineno} %加入行号
+\usepackage[normalem]{ulem} 
+\usepackage{soul}     % 导言区
+\usepackage{xcolor}
+\sethlcolor{cyan!30} 
+\begin{document}
+\title{CFCDBN: Personalized Directional Brain Network Modeling of Cross-Frequency Coupling Alterations in Adolescent Anxiety Disorders}
+\author{
+{Dixin Wang,~Na Chu,~Shuting Sun,~Cancheng Li,~Gang Luo,~Shanshan Qu,~Lixian Zhu,\\~Xiaohua Wan$^{*}$\hspace{-1.5mm},~Jingxin Liu$^{*}$\hspace{-1.5mm},\and~Bin Hu$^{*}$\hspace{-1.5mm},~\IEEEmembership{Fellow,~IEEE}}
+\thanks{This work was partially supported by the National Natural Science Foundation of China (No.~62227807), and the National Natural Science Foundation of China (No.~32241027, ~62472034)}%
+\thanks{Dixin Wang, Na Chu, Gang Luo, Shanshan Qu, Lixian Zhu, Xiaohua Wan, Jingxin Liu, and Bin Hu are with the Key Laboratory of Brain Health Intelligent Evaluation and Intervention (Beijing Institute of Technology), Ministry of Education, Beijing, 100081, China, and the School of Medical Technology, Beijing Institute of Technology, Beijing, 100081, China. Bin Hu is also with the Gansu Provincial Key Laboratory of Wearable Computing, School of Information Science and Engineering, Lanzhou University, Lanzhou, China, the CAS Center for Excellence in Brain Science and Intelligence Technology, Shanghai Institutes for Biological Sciences, Chinese Academy of Sciences, Shanghai, China, and Joint Research Center for Cognitive Neurosensor Technology of Lanzhou University \& Institute of Semiconductors, Chinese Academy of Sciences, Lanzhou, China~(e-mail:~wdxcjnb,~chuna2002,~gang,~quss,~zhulx17,~wanxiaohua,~liujx17,~bh@bit.edu.cn.~\emph{Corresponding authors}:~Xiaohua Wan, Jingxin Liu and Bin Hu.}
+\thanks{Shuting Sun is with the School of Information Science and Engineering, Lanzhou University, Lanzhou, 730000, China~(e-mail:~sst@lzu.edu.cn).} 
+\thanks{Cancheng Li is with the School of Biological Science and Medical Engineering, Beihang University, Beijing 100191, China (e-mail: Cancheng\_Li@ieee.org).}%
+}
+\maketitle
+
+\begin{abstract}
+Anxiety disorders (AD) are prevalent psychiatric conditions that profoundly impact adolescent neural development. Abnormal delta–beta cross-frequency coupling (CFC) has been identified as a key electrophysiological marker of altered neural dynamics in individuals with AD. However, most existing studies focus on static analysis within restricted brain regions and predefined frequency bands, which limits the understanding of large-scale dynamic neural communication. 
+Therefore, we propose a novel cross-frequency coupling directed brain network (CFCDBN) framework, which integrates personalized CFC estimation and causal information flow modeling to capture the dynamic interactions of the brain network in AD. Personalized CFC significantly improves the precise representation of AD-related neural dynamics by adaptive frequency band division and individualized oscillation feature extraction, overcoming the limitations of traditional CFC methods. The analysis reveals significant delta-beta coupling abnormalities in the left hemisphere of AD, accompanied by disrupted directional pathways involving the thalamus, precuneus, and insula. These findings suggest impaired emotional and cognitive communication from the subcortical to cortical regions.
+To validate the efficacy of CFCDBN in distinguishing AD patients from healthy individuals, we developed a direction-aware graph neural network (DA-GNN) model that uses CFCDBN representations as input to capture dynamic neural patterns in causal brain connectivity.
+Experimental results show that the model consistently outperforms traditional machine learning methods and undirected GNN baselines in automatic AD identification, achieving a classification accuracy of 77.8\%, and confirming the value of CFCDBN as a robust biomarker for AD-related network dysfunction.
+These findings not only deepen our understanding of the neural dynamics underlying AD, but also lay the foundation for personalized and mechanism-driven neuromodulation strategies. The core implementation of the CFCDBN framework is available on GitHub: \url{https://github.com/wdxcjnb6/CFCDBN}.
+
+\end{abstract}
+
+\begin{IEEEkeywords}
+EEG, Anxiety Disorder, Cross-frequency Coupling, Directed Brain Network
+\end{IEEEkeywords}
+
+\section{Introduction}
+\IEEEPARstart{A}{nxiety} disorders (AD) are among the earliest psychiatric conditions to emerge, typically during childhood or early adolescence (ages 8–13)  \cite{mcgrath2023age}. Given their early onset, AD is associated not only with immediate psychological distress but also with a substantially higher risk of subsequent psychiatric comorbidities. These observations underscore the imperative for early detection and preventive intervention  \cite{kalin2021anxiety, rapee2023anxiety}.
+
+Neuronal oscillations play a fundamental role in coordinating activity across cortical networks, functioning as the ``syntax" of neural communication   \cite{myrov2024rhythmicity, buzsaki2023brain}.
+Their cross-frequency coupling (CFC) forms nested rhythmic patterns that synchronize neural circuits and facilitate efficient transmission and integration of information   \cite{bonnefond2017communication}.
+Building on this mechanistic foundation, non-invasive brain stimulation (NIBS) employs oscillatory entrainment to modulate intrinsic brain rhythms via external rhythmic stimuli—an approach that enhances cognitive function and has shown considerable clinical promise. NIBS has demonstrated considerable clinical promise in alleviating AD symptoms~  \cite{thut2011rhythmic, stein2020transcranial}.
+However, the neurophysiological mechanisms behind AD and the interactions of brain oscillations remain incompletely understood   \cite{fusar2021preventive}, resulting in the reliance on clinical experience and findings from numerous randomized controlled trials (RCT) to select stimulation targets for NIBS   \cite{young2023agile}. This reliance leads to significant variability in treatment outcomes across different populations and challenges reproducibility.
+Therefore, a deeper understanding of the intrinsic oscillatory dynamics in AD, particularly the directional flow of information across neural circuits and modulatory interactions between brain regions, may yield mechanistic insights essential for developing more precise and reproducible neuromodulatory interventions. Given the limitations of current NIBS target selection, a more precise understanding of oscillatory dynamics in AD is urgently needed.
+
+Electroencephalography (EEG), with its high temporal resolution and non-invasiveness, provides an ideal modality for capturing such rapid neural oscillations.
+Relevant studies have shown that abnormal EEG oscillatory coupling patterns are strongly associated with anxiety severity, particularly in the delta (1–4 Hz) and beta (13–30 Hz) frequency bands   \cite{knyazev2011cross}.
+Early power spectral and correlation-based analyzes further suggest that elevated delta–beta coupling strength correlates with increased anxiety in individuals with AD~  \cite{knyazev2006anxious, davidson2000while}.  
+With the advancement of CFC methodologies   \cite{aru2015untangling}, phase–amplitude coupling (PAC) has emerged as a more precise measure to quantify the coupling strength by evaluating how the amplitude of high-frequency oscillations is modulated by the phase of lower-frequency rhythms   \cite{tort2010measuring}. 
+PAC has been extensively applied in the study of sleep   \cite{bergmann2018phase} and epilepsy  \cite{lu2024eeg}, where it has been proven to be useful in characterizing the neural mechanisms underlying sleep-dependent memory consolidation and pathological oscillatory dynamics, respectively. More recently, several studies have begun to investigate the potential association between abnormal delta–beta PAC patterns and AD, reporting that alterations in coupling strength correlate with the severity of anxiety symptoms  \cite{al2020review}. 
+For example, Poppelaars et al. examined static PAC across three frontal electrodes (F3, Fz, F4) and found that the frontal delta-beta coupling was indicative of mild state anxiety in low anxiety individuals  \cite{poppelaars2018frontal}.
+Similarly, Qiao et al. evaluated PAC on three electrodes in the frontal and parietal regions during a stress induction task, revealing a significant association with state anxiety in individuals with high trait anxiety  \cite{qiao2024anticipation}.
+In contrast, Kroupi et al. averaged EEG signals within 12 regions of interest (ROI) and applied a debiasing PAC method, but found no significant correlation between regional PAC strength and anxiety scores in individuals with autism  \cite{kroupi2024age}.
+
+Although offering valuable insights into delta–beta PAC alterations in AD, these studies still present several methodological limitations. Specifically, computing PAC within fixed conventional frequency bands ignores individual spectral variability, which may increase the risk of false positives.  At the same time, using fewer channels or averaging signals across regions may reduce computational demand, but risk obscuring region-specific coupling and introducing distortions or aliasing, thereby degrading the spatial resolution of PAC estimation.
+In terms of coupling strength calculation, conventional static PAC analyses compute a single coupling strength by averaging amplitudes across phase bins within a fixed time window \cite{tort2010measuring}. The minimum window length is constrained by the coupled phase frequency, as at least one full cycle is required to estimate amplitude distributions \cite{voytek2013method}. Given the increasing evidence of widespread abnormalities in brain dynamics and disrupted communication across large-scale brain networks in individuals with AD \cite{wang2023analysis,cui2020disrupted,sylvester2012functional}, these methodological constraints inherently reduce temporal resolution, limit the ability to capture dynamic neural interactions, and hinder the accurate inference of directional information flow across large-scale brain networks. Furthermore, the absence of a unified computational framework capable of integrating PAC-based features into downstream classification tasks further impedes the advancement of computer-aided diagnostic and analytical methods for AD.
+
+
+
+
+
+Given these limitations, it remains unclear whether the neural coupling alterations observed in AD reflect broader disruptions in network-level communication, particularly those that involve directed information flow between brain regions.
+Therefore, we hypothesize that PAC-related functional disturbances in AD are not solely due to abnormal delta–beta coupling at the regional level, but also reflect impairments in the directional dynamics of interregional PAC.
+These combined abnormalities may be the basis for alterations in the organization and topology of network-level PAC associated with AD, potentially serving as novel biomarkers for characterizing the neural basis of anxiety-related neural dysfunction.
+
+To better characterize network-level dynamic coupling abnormalities in AD, we propose a novel cross-frequency coupling directed brain network (CFCDBN) analysis framework that integrates CFC features with a directed brain network (DBN) to examine aberrant oscillatory information flow in AD-related brain networks.
+DBN models directed interactions among brain regions by representing each region as a node and encoding the information flow through edges inferred from neural signals such as EEG  \cite{chicharro2014algorithms, coito2019directed, cao2022brain}. Building on this foundation, CFCDBN departs from conventional single-frequency EEG modeling by replacing raw time series with localized CFC strength sequences, allowing more precise tracking of cross-frequency neural interactions with embedded causal directionality.
+
+Furthermore, CFCDBN can be naturally represented as a directed graph encoding connectivity strength, information flow, and topological structure. 
+In the field of graph-structured feature modeling, the graph neural network (GNN) is an emerging deep learning framework that has been extensively applied to the modeling and analysis of neuroimaging data such as EEG and fNIRS \cite{wang2020linking,wang2025hybrid}. Based on this, we introduce a new graph classification architecture, referred to as the Direction-Aware Graph Neural Network (DA-GNN), which addresses the limitations of traditional GNNs in capturing directional connectivity and enables effective modeling of cross-frequency interactions. This architecture extracts discriminative features from CFCDBN and facilitates automated AD detection.
+By preserving the directed nature of oscillatory information flow, DA-GNN not only achieves superior classification performance but also reveals interpretable patterns of abnormal directional connectivity that may serve as clinically relevant biomarkers.
+A schematic overview of the proposed framework is shown in Figure~\ref{fig:0}, and the core contributions of this study are summarized below.
+\begin{enumerate}
+    \item We propose a novel CFCDBN framework for the computation of the directed information flow, integrating individualized PAC analysis with directed connectivity modeling to investigate the neural mechanisms underlying AD.
+    
+    \item We reveal significant left-lateralized delta–beta PAC abnormalities and a disrupted directional pathway centered on the thalamus, suggesting asymmetric neural synchronization and persistent subcortical–cortical communication deficits.
+
+    \item We propose a DA-GNN framework specifically designed for the classification of CFCDBN representations at the graph level, achieving a top accuracy of 77.8\% among all baseline models. It outperforms undirected GNNs and conventional classifiers while producing interpretable biomarkers of altered connectivity in adolescent anxiety.
+\end{enumerate}
+
+In summary, the proposed framework offers an effective and interpretable approach based on directed brain networks to uncover abnormal CFC mechanisms in AD, providing a generalizable foundation for personalized diagnostics and the development of replicable neuromodulatory strategies.
+
+\begin{figure*}[htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figure/fig0.pdf}
+       \caption{The CFCDBN framework. (A) EEG preprocessing. (B) Power spectral parameterization. (C) Extraction of individualized half-maximum bandwidths. (D) PAC computation pipeline. (E) Temporal unfolding to obtain PAC coupling sequences. (F) Directed connectivity estimation. (G) AD classification via DA-GNN framework.}
+
+    \label{fig:0}
+\end{figure*}
+
+\section{Materials and Methods}
+\subsection{Demographics and psychiatric assessment}
+Participants were selected from the Healthy Brain Network (HBN) public dataset(\url{https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/})~ \cite{alexander2017open}, which includes phenotype and neuroimaging data from individuals aged 5-17. All underwent semi-structured psychiatric interviews according to the DSM-5 criteria, with diagnoses confirmed by HBN clinicians. Based on the Screen for Child Anxiety Related Emotional Disorders (SCARED)~ \cite{birmaher1997screen}, 40 adolescents with AD and 40 healthy controls (HC) with matching age and gender were included.  The demographic data of the participant are summarized in Table~\ref{tab:ad_hc_comparison}.
+
+\begin{table}[h]
+\centering
+\caption{Demographic and Clinical Summary}
+\label{tab:ad_hc_comparison}
+\begin{tabular}{lccc}
+\toprule
+Group & Anxiety (N=40) & Healthy (N=40) & p-value \\
+\midrule
+Age (years) & 11.93 (3.35) & 12.37 (2.94) & 0.532 \\
+SR\_Total & 33.00 (15.48) & 8.68 (5.55) & *** \\
+P\_Total & 20.98 (12.64) & 5.28 (4.37) & *** \\
+Sex (M/F) & 27/13 & 20/20 & 0.173 \\
+\bottomrule
+\multicolumn{4}{p{0.95\linewidth}}{\footnotesize \textit{Note:} M, male; F, female; SR = SCARED Self Report; P = SCARED Parent Report. *p\textless0.05, **p\textless0.01, ***p\textless0.001.} \\
+\end{tabular}
+\end{table}
+
+\subsection{EEG Data acquisition and preprocessing}
+High-density resting-state EEG data were recorded in a soundproof room using a 128-channel Geodesic Hydrocel system, with a sampling rate of 500\,Hz and a bandpass filter set between 0.5\,and 100\,Hz. The Cz electrode was used as the reference electrode. To minimize external interference, 5\,segments (5*30\,s=150\,s) of eyes-closed resting-state EEG data were selected from each participant for further analysis. The preprocessing pipeline was implemented using the EEGLAB toolbox \cite{delorme2004eeglab}. First, electrodes on the neck and cheeks were excluded. The remaining signals were bandpass filtered between 0.5 and 45\,Hz, and then followed by independent component analysis (ICA) to remove artifact.
+The EEG recordings were divided into 2-second segments, and segments with voltage exceeding 100\,$\,\mu\mathrm{V}$ were excluded. Finally, valid segments of 60 seconds without artifacts were selected from each subject.
+
+EEG source space analysis was performed using the FieldTrip toolbox  \cite{oostenveld2011fieldtrip}. A standard head model was constructed from T1-weighted MRI using the boundary element method. The inverse problem was solved using the eLORETA algorithm  \cite{gramfort2010openmeeg} with a regularization parameter of \(\lambda\,=\,0.05 \). The estimated dipole activity was then projected onto the cortical regions defined by the AAL90 atlas \cite{tzourio2002automated}.
+
+\subsection{Extraction of individualized oscillatory parameters}
+The periodic components of the EEG signals reflect synchronized neuronal oscillations, whereas the aperiodic activity manifests itself as a background spectral trend following a distribution $1/f$, where $f$ denotes frequency. Although the physiological basis of this aperiodic component remains unclear, previous studies have demonstrated its independence from neural oscillatory activity  \cite{brake2024neurophysiological}. Furthermore, the central frequency and power distribution of oscillatory activity vary substantially between individuals, influenced by factors such as age and mental state  \cite{turner2023developmental}. Therefore, accurately identifying individual oscillatory frequency ranges is important in minimizing false-positive PAC effects and may also help reduce computational complexity.
+
+Consequently, we used the fitting oscillations and one-over-F (FOOOF) method to parameterize the individual power spectral density (PSD) \cite{donoghue2020parameterizing}. The FOOOF models the PSD as the sum of an aperiodic background component and multiple periodic oscillatory peaks, each represented by a Gaussian function. The complete parameterization is provided in Eq.~\eqref{1}.
+ 
+\begin{equation}
+PSD = L + \sum_{n=0}^N G_n
+\label{1}
+\end{equation}
+where \(L\) represents the aperiodic component, and \(G_n\) denotes the Gaussian fit for the \(n\)-th oscillation, defined as in Eq.~\eqref{2}:
+\begin{equation}
+G_n(f) = a \times \exp \left( \frac{-(f - c)^2}{2 \sigma^2} \right)
+\label{2}
+\end{equation}
+where, \(a\) denotes the amplitude of the oscillatory peak, \(c\) is the central frequency, \(\sigma\) is the standard deviation of the Gaussian, and \(f\) is the input frequency vector. By subtracting the aperiodic component \(L\) from the power spectrum, we obtain the oscillatory peak frequency \(c\) for each participant.
+
+
+\subsection{Dynamic phase-amplitude coupling method}
+
+Although various methods for calculating PAC modulation indices have been proposed, there is still no widely accepted ``gold standard" for measuring coupling. The three most commonly used methods are the Mean Vector Length modulation index (MVLmi)  \cite{canolty2006high}, the Kullback-Leibler modulation index (KLmi)  \cite{tort2010measuring}, and the General Linear Model modulation index (GLMmi)  \cite{bruns2004task}.
+These methods are better suited for static analyses and require large datasets to obtain robust estimates, limiting their ability to capture dynamic coupling. To capture time-varying coupling, we adopt the MIPAC algorithm, a dynamic PAC method based on local mutual information \cite{martinez2019measuring}. MIPAC leverages pointwise information-theoretic measures to provide a more accurate analysis of dynamic PAC, effectively capturing its time-varying characteristics. The calculation of MIPAC is as follows:
+
+Shannon entropy quantifies the uncertainty of a random variable \( X \) and is defined as:
+\begin{equation}
+H(X) = -\sum_{x} p(x) \log_2 p(x)
+\label{3}
+\end{equation}
+The conditional entropy of \( X \) given another variable \( Y \) is:
+\begin{equation}
+H(X \mid Y) = -\sum_{x, y} p(x, y) \log_2 p(x \mid y)
+\label{4}
+\end{equation}
+Mutual information quantifies the reduction in uncertainty of \( X \) given knowledge of \( Y \), and is defined as:
+\begin{equation}
+I(X, Y) = H(X) - H(X \mid Y) = \sum_{x, y} p(x, y) \log_2 \frac{p(x, y)}{p(x) p(y)}
+\label{5}
+\end{equation}
+Based on the definition of mutual information, a pointwise contribution to the overall coupling between variables can be expressed in the form of local mutual information, defined as:
+\begin{equation}
+i(x, y) = \log_2 \frac{p(x \mid y)}{p(x)}
+\label{6}
+\end{equation}
+
+To compute local mutual information in Eq.~\eqref{6}, the MIPAC algorithm employs the Kraskov–Stögbauer–Grassberger (KSG) estimator \cite{kraskov2004estimating}, which avoids direct estimation of the probability density function by using distances to the nearest neighbors in the marginal spaces. The local mutual information is given by:
+\begin{equation}
+i(x, y) = \psi(k) - \psi(n_x + 1) - \psi(n_y + 1) + \psi(N)
+\label{7}
+\end{equation}
+where \( \psi(.) \) is the digamma function, \( N \) is the sample size, and \( n_x \) and \( n_y \) represent the number of nearest neighbors for random variables \( X \) and \( Y \), respectively. Although resting-state EEG signals are inherently non-stationary, they can be approximated as locally stationary within short time windows. This assumption allows for an effective estimation of instantaneous PAC using local mutual information methods.
+
+\subsection{ Construction of CFC-based directed brain network  }
+Neural oscillatory coupling at different frequencies enables structured communication across spatial and temporal hierarchies in the brain. Although functional connectivity and conventional PAC measures can capture inter-regional synchrony to some extent, they fall short in revealing the dynamic transfer and modulation of information flow. To investigate the characteristic coupling patterns associated with AD, we propose a novel framework for modeling the causal relationships among coupling strength sequences. This approach provides a comprehensive means of analyzing brain dynamics, particularly the directed interactions between distinct oscillatory components and regions. The following steps detail the construction of the proposed CFCDBN model.
+
+\subsubsection{Detection of subject-specific oscillatory peak frequency}  
+
+First, the PSD of the \( k \)-th brain region signal \( x_k(t) \), where \( k \in \{1, 2, \dots, N\} \), is computed for each subject using the Welch method, with 2-second segments, 50\% overlap and a Hanning window. Here, \(N\) is the number of brain regions. The PSD curve averaged by the region is then fitted within the frequency range of 0.5 to 45 Hz, following the procedures outlined in Eq.~\eqref{2} of the FOOOF method, as shown in Figure~\ref{fig:0} (B).
+
+After subtracting the background component \( L \), the central peaks of the low- and high-frequency oscillations, denoted \( c_{lf} \) and \( c_{hf} \), are identified by Gaussian fitting, and the corresponding peak powers, \( a_{lf} \) and \( a_{hf} \), are calculated for each frequency range.
+
+\subsubsection{Adaptive estimation of spectral bandwidth}  
+
+The target frequency band range is automatically determined on the basis of the final oscillatory fitting results, constrained by the specified full width at half maximum (FWHM). As an adaptive criterion, FWHM accounts for spectral variability and ensures that the extracted oscillatory components are centered on subject-specific peak frequencies, thereby improving the precision of cross-frequency coupling analysis.
+
+As shown in Figure~\ref{fig:0}(C), the FWHM is defined as the frequency range around the central frequency \( c \), within which the power drops to half of its peak value. To derive this range, we set \( G_n(f) = \frac{a}{2} \) in Eq.~\eqref{2}, giving:
+\begin{equation}
+\frac{(f - c)^2}{2 \sigma^2} = \ln(2)
+\label{8}
+\end{equation}
+solving for \( f \), the frequency at half-maximum is given by:
+\begin{equation}
+\mathrm{FWHM} = 2 \sigma \cdot \sqrt{2 \ln(2)}
+\label{9}
+\end{equation}
+Consequently, the subject-specific narrowband frequency interval \( w \) around the peak is defined as:
+\begin{equation}
+w = \left[ c - \sigma \cdot \sqrt{2 \ln(2)}, \quad c + \sigma \cdot \sqrt{2 \ln(2)} \right]
+\label{10}
+\end{equation}
+
+
+\subsubsection{Extraction of PAC-related phase and amplitude components}
+
+As shown in Figure~\ref{fig:0}(D), prior to PAC analysis, the signal \( x_k(t) \) is bandpass filtered to extract low-frequency and high-frequency components within the individualized bands \( w_{lf} \) and \( w_{hf} \), respectively. The Hilbert transform is then applied to the filtered signals to derive the low-frequency phase \( \phi_k(t) \) and the amplitude envelope of the high-frequency component \( \mathcal{A}_k(t) \). These extracted features form the basis for the subsequent PAC computation.
+
+\subsubsection{Computation of local coupling strength time series}
+
+To effectively capture fluctuations in coupling strength time series within the brain region \( k \), the low-frequency band \( w_{\text{lf}} \) is divided into \( n \) equally spaced intervals, resulting in low-frequency sampling points \( ls_i \) (\( i = 1, 2, \dots, n \)). Likewise, the high-frequency band \( w_{\text{hf}} \) is partitioned into \( m \) intervals, producing high-frequency sampling points \( hs_j \) (\( j = 1, 2, \dots, m \)).
+As illustrated in Figure~\ref{fig:0}(E), for each frequency pair \( (ls_i, hs_j) \), a localized PAC modulation index \( mi_k^{(i,j)}(t) \) is calculated using the MIPAC algorithm, resulting in \( m \times n \) continuous time series aligned in length with the input signal \( x_k(t) \). The final coupling strength time series for the brain region \( k \) is then obtained by computing the average across all frequency combinations:
+\begin{equation}
+mi_k^{(i,j)}(t) = f_{\text{MIPAC}}(ls_i, hs_j, x_k(t))
+\label{11}
+\end{equation}
+
+\begin{equation}
+MI_k(t) = \frac{1}{m \times n} \sum_{i=1}^{n} \sum_{j=1}^{m} mi_k^{(i,j)}(t)
+\label{12}
+\end{equation}
+This procedure enables robust estimation of dynamic coupling within individualized frequency bands while preserving high temporal resolution. Applying this method across all brain regions yields a global MI matrix representation:
+
+\begin{equation}
+\mathbf{MI}(t) =
+\begin{bmatrix}
+MI_1(t) \\
+MI_2(t) \\
+\vdots \\
+MI_N(t)
+\label{13}
+\end{bmatrix}
+\end{equation}
+This resulting matrix enables a detailed analysis of the temporal dynamics of cross-frequency coupling across the entire brain network.
+
+\subsubsection{Construction of the CFCDBN}  
+
+
+As illustrated in Figure~\ref{fig:0}(F), the CFCDBN framework models brain regions as nodes in a directed graph, where each edge represents a causal influence from region \( k \) to region \( j \), with weights computed from the directed connectivity between their dynamic coupling strength signals \( MI_k(t) \) and \( MI_j(t) \).
+
+To estimate these directed interactions, we employed transfer entropy (TE), a non-parametric measure that avoids strong model assumptions and captures both linear and nonlinear directional dependencies. Due to its minimal reliance on data distribution, TE is particularly well suited for analyzing EEG signals with high complexity and low signal-to-noise ratio (SNR)~ \cite{harmah2020measuring}.
+
+Formally, TE quantifies the predictive information transferred from a source signal \( X \) to a target signal \( Y \), conditioned on the past of \( Y \). The formulation proposed by Vicente et al.~ \cite{vicente2011transfer} is given by:
+\begin{equation}
+TE_{(X \rightarrow Y)} = \sum_{y_{t+u}, y_t, x_t} p(y_{t+u}, y_t, x_t) \log \left( \frac{p(y_{t+u} \mid y_t, x_t)}{p(y_{t+u} \mid y_t)} \right)
+\label{14}
+\end{equation}
+where \( u \) denotes the temporal prediction lag, and \( p(y_{t+u}, y_t, x_t) \) represents the joint probability distribution over the future state of \( Y \), its present state, and the past state of \( X \).
+
+
+The computed TE values are organized into a directed connectivity matrix \( \mathbf{C} \), where each entry \( C_{jk} = TE_{(MI_k \rightarrow MI_j)} \) represents the information flow from region \( k \) to region \( j \):
+\begin{equation}
+\mathbf{C}_{jk} = TE_{(MI_k \rightarrow MI_j)}, \text{for } j, k = 1, 2, \dots, n \text{ and } j \ne k.
+\label{15}
+\end{equation}
+
+
+
+To further evaluate the reproducibility and robustness of the proposed framework, we adopted phase transfer entropy (PTE) as a comparative measure \cite{lobier2014phase}. PTE has been widely applied in EEG/iEEG studies and has been validated as a reliable index of directional connectivity in electrophysiological signals \cite{das2020spatiotemporal, das2022electrophysiological, das2022replicable, das2022causal, das2024frequency}. In our work, PTE was used as a reference to verify the consistency of our results, given its computational efficiency and enhanced sensitivity to phase information compared with conventional TE. A detailed mathematical description of PTE and the parameter settings used in the directed connectivity analysis are provided in the supplementary materials.
+
+By encoding directional information flow into the MI matrix, the CFCDBN systematically models dynamic cross-frequency interactions across brain regions, which are subsequently used for downstream graph-based learning.
+\begin{figure*}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figure/fig1.pdf}
+    \caption{Power spectral and source localization analysis. (A) Spectral parameterization. (B) Spatial distribution of cortical activity.}
+    \label{fig:1}
+\end{figure*}
+
+\subsection{AD Classification via Directed Graph Representation Learning with DA-GNN}  
+In this study, we focus on the task of graph classification, aiming to learn a representation vector \( \mathbf{x}_g \) that allows the prediction of the corresponding graph label \( y_g = f(\mathbf{x}_g) \). However,most of the existing GNN-based brain network classification models are built on undirected graphs, such as functional connectivity networks~ \cite{grana2023review}, thus neglecting the potential advantages of incorporating directional information. 
+To address this limitation, we propose a direction-aware extension to the standard GNN architecture that explicitly models directional dependencies between brain regions, enabling the network to better capture asymmetric causal interactions commonly observed in neurophysiological processes.
+
+Considering a directed weighted graph \( G_d = (V, E) \), where \( V \) represents the set of \( n \) nodes corresponding to distinct brain regions, and \( E \) denotes the set of directed edges. The directed adjacency matrix \( A \in \{0, 1\}^{n \times n} \) is defined such that \( a_{ij} = 1 \) if there exists a directed edge from node \( i \) to node \( j \) (\( (i, j) \in E \)), and \( a_{ij} = 0 \) otherwise. 
+Additionally, each directed edge is associated with a weight that quantifies the strength of the direct directed connection between nodes. The weight matrix \( W \in \mathbb{R}^{n \times n} \) encodes these weights, where \( w_{ij} \) represents the strength of the directed influence from node \( i \) to node \( j \).
+
+The GNN model can be reformulated using the general architecture of the message passing neural network (MPNN)  \cite{gilmer2017neural}. The message passing process in MPNN involves two key steps: aggregation (AGG) and combination (COM), which are iteratively applied over \( K \) propagation steps  \cite{xu2018powerful}. 
+Let \( \mathbf{x}_i^{(k-1)} \in \mathbb{R}^d \) denote the embedding of node \( i \in V \) at layer \( k-1 \). The message vector \( \mathbf{m}_i^{(k)} \) is computed by aggregating information from its neighbors \( \mathcal{N}(i) = \{ j \in V \mid (j, i) \in E \} \) as follows:
+\begin{equation}
+\mathbf{m}_i^{(k)} = \text{AGG}^{(k)} \left( \left\{ (\mathbf{x}_j^{(k-1)}, \mathbf{x}_i^{(k-1)}) \mid j \in \mathcal{N}(i) \right\} \right)
+\label{16}
+\end{equation}
+The updated embedding \( \mathbf{x}_i^{(k)} \) is then obtained by combining \( \mathbf{x}_i^{(k-1)} \) with the aggregated message:
+\begin{equation}
+\mathbf{x}_i^{(k)} = \text{COM}^{(k)} \left( \mathbf{x}_i^{(k-1)}, \mathbf{m}_i^{(k)} \right)
+\end{equation}
+However, this message passing process is not directly applicable to directed graphs, as it inherently assumes symmetric information propagation between nodes. In contrast, directed graphs exhibit asymmetric information flow, with edges encoding specific directional dependencies.
+To accommodate this asymmetry, we adopt a bidirectional update mechanism inspired by Rossi et al.~ \cite{rossi2024edge}, and extend it to a graph-level classification framework by restructuring the feature aggregation process to better capture global connectivity patterns. This adaptation enables the integration of bidirectional information flow while retaining discriminative features at the graph scale, which is essential for modeling brain-wide directional interactions in CFCDBN representations.
+
+To this end, both the AGG and COM modules are redesigned to support global representation learning. As illustrated in Figure~\ref{fig:0}(G), we replace the standard neighborhood aggregator with two distinct modules: an in-aggregator $\text{AGG}_{\text{in}}$ and an out-aggregator $\text{AGG}_{\text{out}}$, each parameterized independently. These components perform direction-specific aggregation, allowing the architecture to effectively capture asymmetries information flow in directed brain networks.
+This design enhances the model's capacity for directional reasoning and establishes a new architectural for directional graph-level classification in DBN analysis. The specific implementation is detailed as follows:
+\begin{align}
+\mathbf{m}_{i,in}^{(k)}&=\text{AGG}_{in}^{(k)}\left(\left\{\left(\mathbf{x}_{j}^{(k - 1)},\mathbf{x}_{i}^{(k - 1)}\right)\mid(j,i)\in E\right\}\right)\\
+\mathbf{m}_{i,out}^{(k)}&=\text{AGG}_{out}^{(k)}\left(\left\{\left(\mathbf{x}_{j}^{(k - 1)},\mathbf{x}_{i}^{(k - 1)}\right)\mid(i,j)\in E\right\}\right)\\
+\mathbf{x}_{i}^{(k)}&=\text{COM}^{(k)}\left(\mathbf{x}_{i}^{(k - 1)},\mathbf{m}_{i,in}^{(k)},\mathbf{m}_{i,out}^{(k)}\right)
+\end{align}
+
+This direction-aware aggregation strategy can be readily incorporated into classical GNN models such as GCN~ \cite{kipf2016semi}, GAT~ \cite{velivckovic2017graph}, and GraphSAGE~ \cite{hamilton2017inductive}.
+Taking the GCN model as an example, the update rule for node features is iteratively propagated and updated through the graph structure as follows:
+\begin{equation}
+\mathbf{x}_{i}^{(k)} = \sigma \left( \mathbf{D}^{-1/2} \mathbf{A} \mathbf{D}^{-1/2} \mathbf{x}_{i}^{(k-1)} \mathbf{W}^{(k-1)} \right)
+\end{equation}
+where \( \mathbf{x}_{i}^{(k)} \) represents the feature vector of node \( i \) at the \( k \)-th layer, \( \mathbf{A} \) is the normalized adjacency matrix, \( \mathbf{D} \) is the degree matrix, \( \mathbf{W}^{(k-1)} \) is the learned weight matrix from the previous layer, and \( \sigma \) is the activation function.
+The aggregation map, derived from ~\eqref{16}, is given by \( \mathbf{m}_i^{(k)} = (\mathbf{S} \mathbf{x}^{(k-1)})_i \), where \( \mathbf{S} = \mathbf{D}^{-1/2} \mathbf{A} \mathbf{D}^{-1/2} \).
+
+For directed graphs, it is necessary to distinguish between in-neighbors and out-neighbors. Consequently, two distinct message-passing matrices, \( \mathbf{S}_{\text{in}} \) and \( \mathbf{S}_{\text{out}} \), are employed to process information from neighbors in different directions. The corresponding normalized forms are given by:
+\begin{equation}
+(\mathbf{S}_{in})_{ji} = \frac{a_{ji}}{\sqrt{d_{\text{in}}(i) d_{\text{out}}(j)}},
+(\mathbf{S}_{out})_{ij} = \frac{a_{ij}}{\sqrt{d_{\text{out}}(i) d_{\text{in}}(j)}}
+\end{equation}
+where \( a_{ij} \) denotes the elements of the adjacency matrix \( \mathbf{A} \), \( d_{\text{in}}(i) \) represents the in-degree of node \( i \), and \( d_{\text{out}}(j) \) represents the out-degree of node \( j \). Based on the above, this induces the update rule for directed graphs at the \( k \)-th layer:
+\begin{equation}
+\mathbf{X}^{(k)} = \sigma \left( \mathbf{S}_{in} \mathbf{X}^{(k-1)} \mathbf{W}_{in}^{(k)} + \mathbf{S}_{out} \mathbf{X}^{(k-1)} \mathbf{W}_{out}^{(k)} \right)
+\end{equation}
+where \( \mathbf{W}_{in}^{(k)} \) and \( \mathbf{W}_{out}^{(k)} \) are learnable weight matrices used to transform the information propagated in different directions. By incorporating direction-aware mechanisms into GSAGE and GAT, the directed versions of these models can be obtained \cite{rossi2024edge}.
+
+In the graph classification task, the graph-level feature vector \( \mathbf{X}_g \) is obtained by applying a READOUT (REA) function to aggregate the node features from the final iteration:
+\begin{equation}
+\mathbf{X}_g = \text{REA}(\{\mathbf{X}_v^{(K)} \mid v \in V\}),
+\end{equation}
+where \( \mathbf{X}_v^{(K)} \) represents the feature vector of node \( v \) at iteration \( K \), and \( V \) is the set of nodes in the graph. The REA function is typically a permutation-invariant operation  \cite{xu2018powerful}. In this study, we adopt a global pooling function, specifically the average of the node features:
+\begin{equation}
+\mathbf{X}_g = \frac{1}{|V|} \sum_{v \in V} \mathbf{X}_v^{(K)},
+\end{equation}
+where \( |V| \) is the number of nodes in the graph, and \( \mathbf{X}_g \) is the aggregated graph-level feature vector.
+
+Moreover, to enhance the interpretability of the DA-GNN framework, we extract the attention coefficients \( \alpha_{ij}^{(k)} \) learned from the final GAT layer. These coefficients quantify the relative importance of the directed edge \( (i \rightarrow j) \) in updating the representation of node \( j \), and are computed based on the transformed features \( \mathbf{W} \mathbf{x}_i^{(k-1)} \) and \( \mathbf{W} \mathbf{x}_j^{(k-1)} \) within the attention mechanism.  
+By projecting the averaged attention weights onto the brain atlas, we reveal direction-specific functional interactions that are particularly informative for graph-level classification. This facilitates biologically grounded interpretation of the learned representations and highlights discriminative connectivity patterns associated with AD brain states.
+
+\section{Results}
+\begin{figure*}[htbp] 
+\centering 
+\includegraphics[width=0.95\linewidth]{figure/fig2.pdf} 
+\caption{ROI-based analysis of PAC strength. (A) Spatial distribution of regional PAC strength. (B) Brain regions with significant PAC strength differences. (C) Network-level comparison of coupling strength.}
+\label{fig:2} 
+\end{figure*}
+\subsection{Individualized spectral decomposition uncovers delta and beta band differences in AD}
+We first performed spectral parameterization on the preprocessed EEG signals. 
+As shown in Figure~\ref{fig:1}(A), the group-level spectral parameters reveal distinct oscillatory profiles between AD and HC groups. In the beta band, the AD group exhibited a mean peak frequency of \(19.39 \pm 11.91\) Hz, a relative peak power of \(0.45 \pm 0.04\), and a bandwidth of \(3.57 \pm 1.15\) Hz. In contrast, the HC group showed a mean peak frequency of \(18.83 \pm 11.24\) Hz, a relative peak power of \(0.36 \pm 0.03\), and a bandwidth of \(3.72 \pm 1.03\) Hz.
+  
+In the delta band, the spectral peaks were relatively indistinct due to the limited contrast between oscillatory activity and the aperiodic background, resulting in successful peak detection via FOOOF in only approximately 15\% of the participants (7/40 in the AD group, 5/40 in the HC group). To retain the full dataset for subsequent analyses, we adopted a fixed delta peak frequency of 2.5 Hz with a bandwidth of \(\pm 1.5\) Hz.
+Group differences in beta-band spectral power were assessed using independent samples \textit{t}-tests. While no significant differences were observed in peak frequency ($t = -0.74$, $p = 0.46$) or bandwidth ($t = 0.62$, $p = 0.54$), the AD group showed significantly higher relative peak power than the HC group ($t = -2.21$, $p = 0.03$), potentially reflecting aberrant beta-band dynamics linked to anxiety-related dysregulation.
+
+To identify cortical regions exhibiting significant group differences in the delta and beta frequency bands, we employed a cluster-based non-parametric permutation test (Monte Carlo method, 4000 iterations), using independent-sample $t$-tests at the cluster level.  
+Source-level analysis revealed widespread low-frequency activation in the delta band across a broad range of cortical regions in the AD group relative to the HC group, as shown in Figure~\ref{fig:1}(B).
+These differences were primarily localized to the prefrontal cortex, parietal cortex, and portions of the temporal lobes. Notably, although both frequency bands exhibited similar activation patterns overall, the distinction between delta and beta band activity was more evident in the left hemisphere.
+
+\subsection{Static PAC alterations reveal lateralized modulation abnormalities in adolescents with AD}  
+
+In the static PAC analysis, 34 ROIs were selected to examine coupling specifically within AD-related regions (see supplementary materials). Selection was based on previous studies of resting-state brain networks in AD  \cite{sylvester2012functional, langhammer2024resting, janiri2020shared, chavanne2021overlapping} and on significant source-level activations observed in our data. For each ROI, PAC sequences were temporally averaged to yield mean regional coupling strength.
+
+The spatial distribution of PAC strength across cortical regions is shown in Figure~\ref{fig:2}(A). Although the AD and HC groups exhibited broadly similar spatial patterns, statistical comparisons across the 34 ROIs revealed specific regions with significant group differences, as shown in Figure~\ref{fig:2}(B) (independent-sample $t$-tests with FDR correction).  
+Compared to the HC group, the AD group exhibited significantly reduced PAC strength in several left-hemisphere regions, including the dorsolateral superior frontal gyrus (SFGdor), precentral gyrus (PCG; $t = -3.07$, $p = 0.0031$), inferior parietal lobule (IPL), middle frontal gyrus (MFG; $t = -2.78$, $p = 0.0067$), and insula (INS).
+
+For network-level analysis, the 34 ROIs were assigned to five large-scale brain networks: the Default Mode Network (DMN), Somatomotor Network (SMN), Dorsal Attention Network (DAN), Fronto-Parietal Network (FPN), and Salience Network (SN). Intra-network coupling was quantified by averaging PAC strength across ROIs within each network. As shown in Figure~\ref{fig:2}(C), the AD group exhibited a widespread reduction in network-level PAC strength across all five networks relative to the HC group, with the most prominent decreases observed in the left FPN, left DAN, and left DMN.
+
+
+
+\subsection{Dynamic directed information flow based on CFCDBN}
+
+To investigate the temporal dynamics and interregional information flow mediated by delta–beta coupling in AD, TE was computed from pairwise PAC strength time series $MI_k(t)$ between cortical regions. TE estimation was performed using uniform time-delay embedding  \cite{vicente2011transfer} and time-shifted surrogate testing  \cite{montalto2014mute}, which reconstructed the state space and enabled non-parametric inference of significant directed interactions.
+For each subject, TE values were computed from all pairwise PAC time series between 34 ROIs, forming a $34 \times 34$ matrix that defined the edges of the CFCDBN and characterized the flow of coupling-related information across the cortex.
+
+\begin{figure*}[htbp]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figure/fig3.pdf}
+    \caption{Results of CFCDBN analysis. (A) Directed connectivity between ROIs. (B) Directed connectivity between large-scale functional networks. (C) Significant differences in directed connectivity across networks. (D) Significant differences in directed connectivity between brain regions.}
+    \label{fig:3}
+\end{figure*}
+
+For group-level visualization, the top 20\% of the strongest connections were extracted from the group-averaged CFCDBNs to highlight predominant patterns of directed information flow, as shown in Figure~\ref{fig:3}(A). 
+To further examine group differences in directional connectivity, independent-sample $t$-tests were conducted on each edge, revealing specific communication pathways potentially disrupted in AD group.
+
+As shown in Figure~\ref{fig:3}(D), the AD group exhibited significantly enhanced directed connectivity relative to the HC group in several key pathways, including right precentral gyrus (PreCG.R)$\rightarrow$left thalamus (THA.L), left precuneus (PCUN.L)$\rightarrow$right superior parietal gyrus (SPG.R), and THA.L$\rightarrow$right insula (INS.R). In contrast, reduced connectivity was observed in the AD group along pathways from left medial superior frontal gyrus (SFGmed.L)$\rightarrow$THA.L and right dorsolateral superior frontal gyrus (SFGdor.R)$\rightarrow$PCUN.R.
+
+Directional communication at a macro level was assessed by averaging intra-network directed connection strengths across five large-scale brain networks for both the AD and HC groups, revealing inter-network connectivity patterns, as shown in Figure~\ref{fig:3}(B).  
+Subsequent statistical comparisons identified significant group differences in directed connectivity, as shown in Figure~\ref{fig:3}(C).  
+Compared to the HC group, the AD group exhibited reduced intra-network connectivity within the SN, as well as decreased inter-network connectivity from FPN$\rightarrow$DMN and DMN$\rightarrow$DAN.  
+These findings suggest disruptions in both local and large-scale network coordination in individuals with AD.
+
+In addition, we examined the relationship between directed connectivity and individual anxiety severity. For each edge in the CFCDBN, Spearman correlation coefficients were calculated between the corresponding TE values and the SCARED scores. As shown in Figure~\ref{fig:4}, the most prominent pathway involved sequential information flow from THA.L$\rightarrow$INS.R, INS.R$\rightarrow$PCUN.L, and PCUN.L$\rightarrow$SPG.R, suggesting a potential anxiety-related circuit linking subcortical and cortical regions.
+
+\subsection{Evaluating Directional Information Flow in Brain Networks for AD Classification and Interpretability Analysis}
+
+To further explore latent information in the CFCDBN, we propose a data-driven graph learning approach that automatically extracts discriminative structural features from directed connections, enhancing both model capacity and interpretability.
+Each input from subject \( s \) is represented as a directed graph \( G_d = (V, E) \), where \( V \) consists of 34 nodes, each corresponding to a brain region. The feature vector of node \( k \in V \) is defined as a coupling strength sequence \( \mathbf{MI}_k \in \mathbb{R}^T \), where \( T \) denotes the length of the time series. The directed edges \( (i, j) \in E \) are derived from the CFCDBN. The node feature matrix \( \mathbf{X} \in \mathbb{R}^{|V| \times T} \), together with the directed adjacency matrix \( \mathbf{W} \in \mathbb{R}^{|V| \times |V|} \), forms the complete input to the downstream graph-based learning framework.
+
+
+Based on this graph representation, we implement both standard GNN baselines, including GCN, GSAGE \cite{hamilton2017inductive},GIN \cite{xu2018powerful} and GAT \cite{velivckovic2017graph}, and our proposed variants DA-GCN, DA-GSAGE, and DA-GAT, which incorporate a direction-aware design for graph-level classification. In addition, we compare our framework with two state-of-the-art GNN models, Graphormer \cite{shi2022benchmarking,ying2021do} and PNA  \cite{corso2020principal}, to further evaluate its performance against advanced architectures. All GNN models share the same input structure and follow a two-layer design. The first layer projects node features into a 64-dimensional space, while the second layer maps them to a 32-dimensional embedding. Each layer employs ReLU activation and applies dropout (rate = 0.5). Models are trained for 300 epochs using the Adam optimizer (learning rate = 0.001) without L2 regularization.
+In addition, to evaluate the discriminative capacity of node features independent of graph structure, we conduct a traditional classification experiment using a support vector machine (SVM) and a simple convolutional neural network (CNN). Each node feature matrix is vectorized into a one-dimensional input for the SVM. The CNN comprises two 1D convolutional layers for feature extraction, followed sequentially by max pooling, flattening, and two dense layers for binary classification.
+All models are trained and evaluated using a repeated 10-fold cross-validation strategy. Evaluation metrics include accuracy (ACC), sensitivity (SEN), specificity (SPE), and F1-score (F1). A comprehensive comparison between the baselines and our proposed models is provided in Table~\ref{tab:evaluation_comparison}, which also includes ablation results comparing directional and undirected graph structures to assess the effectiveness of the direction-aware design.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figure/fig4.pdf}
+    \caption{Correlation between Directed Connectivity and SCARED Scores}
+    \label{fig:4}
+\end{figure}
+
+
+
+\begin{table}[htbp]
+\centering
+\caption{Performance Comparison of AD Detection}
+\label{tab:evaluation_comparison}
+\renewcommand{\arraystretch}{1.3}
+\scalebox{0.9}{ 
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Method} & \textbf{ACC (\%)} & \textbf{SEN (\%)} & \textbf{SPE (\%)} & \textbf{F1 (\%)} \\
+\midrule
+SVM \cite{joachims1998making}         & 67.3 ± 1.2  & 66.6 ± 0.8 & 69.3 ± 0.8  & 67.8 ± 0.9 \\
+CNN          & 68.9 ± 2.0  & 65.8 ± 3.7 & 67.6 ± 2.5  & 67.2 ± 3.1 \\
+GIN \cite{xu2018powerful}          & 73.2 ± 2.3  & 73.7 ± 2.9 & 72.6 ± 1.4  & 72.1 ± 0.8 \\
+PNA  \cite{corso2020principal}    & 74.7 ± 4.1  & 75.5 ± 3.9 & 74.1 ± 4.5  & 73.6 ± 3.9 \\
+Graphormer  \cite{shi2022benchmarking,ying2021do}   & 71.3 ± 3.9  & 73.6 ± 4.2 & 69.8 ± 4.2  & 70.5 ± 4.3 \\
+GCN \cite{kipf2016semi}         & 72.9 ± 1.1  & 73.8 ± 1.8 & 68.2 ± 2.5  & 69.2 ± 2.1 \\
+GSAGE \cite{hamilton2017inductive}        & 74.0 ± 2.4  & 70.2 ± 3.6 & 72.4 ± 2.7  & 73.3 ± 2.5 \\
+GAT \cite{velivckovic2017graph}          & 76.7 ± 3.2  & 73.0 ± 2.8 & 76.7 ± 2.9  & 75.6 ± 2.6 \\
+D-GCN (ours)        & 74.7 ± 1.9  & \textbf{76.7 ± 1.4}  & 71.3 ± 2.9  & 74.7 ± 1.2 \\
+D-GSAGE (ours)        & 75.5 ± 2.9  & 73.4 ± 3.3 & 75.8 ± 2.8  & 72.6 ± 3.0 \\
+D-GAT (ours)    & \textbf{77.8 ± 2.2} & 76.0 ± 2.6 & \textbf{78.2 ± 3.0} & \textbf{76.9 ± 2.9} \\
+\bottomrule
+\end{tabular}
+}
+\vspace{1mm}
+\end{table}
+
+
+
+As shown in Table~\ref{tab:evaluation_comparison}, the proposed DA-GNN frameworks consistently outperform conventional machine learning baselines and standard GNN architectures on most evaluation metrics.
+Among them, DA-GAT achieves the best overall performance, with an accuracy of 77.8\%, a specificity of 78.2\%, and an F1-score of 76.9\%. Compared to its undirected counterpart, GAT, DA-GAT yields improvements of 1.1\% in accuracy, 1.5\% in specificity, and 1.3\% in F1-score. However, it should be noted that some advanced models did not show significantly enhanced performance on the small sample dataset, likely due to limitations in graph scale and data size. 
+In addition, DA-GCN and DA-GSAGE also exhibit notable gains in sensitivity and accuracy over their undirected versions, further demonstrating the effectiveness of incorporating directional information into graph representation learning.
+
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figure/fig5.pdf}
+    \caption{Visualization of discriminative directed connections}
+    \label{fig:5}
+\end{figure}
+
+To enhance model interpretability from a data-driven perspective, we perform attention weight visualization after training the GAT model to identify the most influential edges for classification. Specifically, we compute the average attention weight for each edge across all testing samples in both the AD and HC groups, resulting in group-level attention matrices. An attention difference matrix is then obtained by subtracting the HC matrix from the AD matrix. For intuitive visualization, the top ten edges with the largest attention differences are projected onto a 3D brain template, as shown in Figure~\ref{fig:5}.
+
+
+\section{Discussion}
+\subsection{Left-Lateralized Neural Synchronization Alterations in AD}
+
+Our analysis provides multiple lines of evidence for abnormal brain neural information interaction patterns in patients with AD. As shown in Figure~\ref{fig:1},  spectral analysis revealed significantly elevated beta band power in the AD group compared to HC group, consistent with recent reports  \cite{roxburgh2023neural}. This increased intensity of the beta rhythm in the resting state may reflect abnormal hyperarousal and elevated neural alertness in patients with AD \cite{wang2025power}.
+Additionally, source localization results for both delta and beta rhythms revealed that AD patients exhibited stronger beta-band activation in the left prefrontal, parietal, and temporal cortices compared to the HC group. This lateralized cortical pattern, characterized by interhemispheric asymmetry, may reflect disruptions in the underlying biological mechanisms associated with AD   \cite{zhao2006prefrontal}  \cite{wang2016cortical}.
+
+Static PAC analysis further supports the lateralized coupling pattern in AD, revealing a significantly stronger delta-beta coupling in the left hemisphere, as illustrated in Figure~\ref{fig:2}. The region-specific results show excessive coupling in the left SFGdor, PCG, IPL, MFG, and INS.
+At the network level, AD patients exhibited a widespread reduction in coupling across all large-scale functional networks, with the most pronounced decreases observed in DMN and DAN. These networks are central to cognitive information processing, and their dynamic interactions are essential for maintaining a balance between functional segregation and integration in the brain   \cite{dixon2017interactions}.
+
+
+\begin{table*}[ht]
+\centering
+\begin{minipage}{\textwidth}
+\caption{Evaluation of Optimal Classification Performance Across Research Frameworks on the HBN Anxiety Dataset}
+\label{tab:Comparison}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{clclcccc}
+\toprule
+\textbf{Category} & \textbf{Framework name} & \textbf{Subjects (AD/HC)} & \textbf{Type of Input Data} & \textbf{ACC (\%)} & \textbf{SEN (\%)} & \textbf{SPE (\%)} & \textbf{Interpretability} \\
+\midrule
+          & GSCCA\_JF + SVM~  \cite{li2023fusing}         & 62/72  & Functional Connectivity    & 80.8 & \textbf{88.9} & 72.4 & \checkmark \\
+          & GSCCA(Fre)+SVM                              & 62/72     & Functional Connectivity    & 77.8 & 71.4 & 84.1 & -- \\
+          & GSCCA(Time)+SVM                             & 62/72     & Functional Connectivity    & 66.7 & 71.4 & 61.9 & -- \\
+Competing & EEMD+SVM~  \cite{zhang2024functional}         & 39/39  & Functional Connectivity    & 87.3 & 88.5 & \textbf{86.1} & -- \\
+          & GSCCA + SVM~  \cite{zhang2020fusing}          & 45/47  & EEG and Eye Features       & 82.7 & 79.8 & 83.0 & \checkmark \\
+          & GSCCA + KNN                                 & 45/47     & EEG and Eye Features       & 78.6 & 80.2 & 76.9 & -- \\
+          & K-GSCCA~  \cite{guo2020anxiety}               & 45/47  & EEG and Eye Features       & \textbf{87.5} & --   & --   & -- \\  
+\cmidrule(lr){1-8}
+          & CFCDBN+DA-GAT        & 40/40  & Effective Connectivity     & \textbf{82.1} & \textbf{79.6} & \textbf{82.8} & \checkmark \\
+Proposed  & CFCDBN+DA-GCN        & 40/40  & Effective Connectivity     & 80.4 & 78.7 & 75.9 & -- \\
+          & CFCDBN+DA-GSAGE      & 40/40  & Effective Connectivity     & 81.2 & 79.5 & 80.4 & -- \\
+\bottomrule
+\end{tabular}
+}
+\vspace{0.5em}
+{\footnotesize \textit{Note:} “--” indicates missing values. “\checkmark” indicates that the model includes interpretability analysis. Bold values highlight the best performance within the respective group (Competing or Proposed).}
+\label{tab:hbn_comparison}
+\end{minipage}
+\end{table*}
+
+
+\subsection{Disrupted Subcortical–Cortical Pathway and Network Integration in AD}
+
+In dynamic analysis in Figure~\ref{fig:3}, the AD group exhibited an increased directed connectivity from PreCG.R$\rightarrow$THA.L, THA.L$\rightarrow$INS.R, and PCUN.L$\rightarrow$SPG.R. These aberrantly enhanced neural interactions may reflect alterations in subcortical–cortical communication pathways.  
+In contrast, reduced connectivity was observed in the AD group along specific pathways, including SFGmed.L$\rightarrow$THA.L and SFGdor.R$\rightarrow$PCUN.R, suggesting disrupted communication between prefrontal and parietal regions. 
+This aligns with previous findings that cognitive reappraisal deficits in AD may result from insufficient engagement of the prefrontal–parietal circuit  \cite{wang2018prefrontoparietal}.
+
+In particular, many of these altered pathways involve the THA, a critical relay hub for sensory integration, and a key structure in emotion regulation and stress response   \cite{kirouac2021paraventricular}. Neuroimaging studies have reported structural abnormalities in the thalamus, particularly reduced volume in the right hemisphere, among children and adolescents with AD. This lateral asymmetry appears to increase with age, which could reflect impaired information transmission and integration in the brain of AD, consistent with our findings   \cite{zhang2020abnormal}.
+
+Furthermore, correlation analyses in Figure~\ref{fig:4} revealed that the directed pathway from THA.L$\rightarrow$INS.R, INS.R$\rightarrow$PCUN.L, and PCUN.L$\rightarrow$SPG.R was significantly positively associated with the SCARED scores. Within this pathway, enhanced directed connectivity between the THA and INS may reflect a mediating role of the INS in thalamic function   \cite{terasawa2013anterior}, potentially contributing to heightened anxiety severity in individuals with AD.  
+Overall, abnormal information flow along the THA–INS–PCUN–SPG pathway may disrupt functional coordination between subcortical and cortical regions involved in emotional processing, thereby contributing to both affective and cognitive disturbances in AD.
+
+
+
+\subsection{Potential Cognitive Circuit Abnormalities in AD Patients}
+From the perspective of large-scale networks, our study found that both the internal coupling strength and inter-network communication efficiency in brain networks of AD patients were significantly lower than in healthy controls. The reduction in within-network connectivity was primarily concentrated in SN. Previous studies have widely established the close association between SN and high trait anxiety in adolescents, suggesting that this dysfunction may lead to impairments in salience processing and cognitive regulation in AD patients  \cite{geng2016decreased}.
+Additionally, directed connections between FPN and DMN were also significantly reduced. These findings collectively pointed to a systemic disruption in the coordination of SN, FPN, and DMN in the brains of AD patients. Such disruptions are aligned with the classic triple network model (composed of SN, FPN, and DMN),which highlights the dynamic coordination of these networks in regulating attention, memory, and other higher cognitive functions, and their close relationship with the neural mechanisms of various diseases, including AD  \cite{zheng2015altered}  \cite{das2024electrophysiological}.
+
+Previous fMRI and intracranial EEG studies have confirmed that SN, as a central hub of information in the brain, can flexibly allocate attention resources and rapidly switch tasks by driving the activation or inhibition of FPN and DMN  \cite{das2020spatiotemporal,das2024electrophysiological,cai2021dynamic,menon2010saliency}. Correspondingly, the group analysis results of our CFCDBN constructed based on TE and PTE (see supplementary materials) consistently revealed a significant reduction in information transmission within the SN network in AD patients. As a central hub for inter-network regulation, SN dysfunction reduced its capacity for information transmission, thereby weakened its modulation of the FPN and DMN. This disruption impaired triple-network coordination and was reflected in insufficient attentional resource allocation and reduced cognitive flexibility at rest. Previous research at the node level has identified the right INS within SN as a pivotal hub for causal control across networks that exhibits the highest capacity for information outflow  \cite{das2020spatiotemporal,das2024electrophysiological,cai2021dynamic,menon2010saliency,cai2016causal}. 
+The static PAC analysis in this study was consistent with this finding: in patients with AD, cross-frequency coupling within the right INS was significantly enhanced, suggesting an imbalance in its coupling regulation, which weakened effective information generation and inter-network transmission efficiency. Further directed connectivity analysis revealed abnormal information flow in key pathways, such as THA.L→INS.R, INS.R→PCUN.L, and PCUN.L→SPG.R in AD patients. These results indicated that right INS abnormalities not only disrupted information integration within SN but also weakened its mediating role in subcortical-cortical circuits, ultimately reducing its effective regulation of the DMN and FPN. In conclusion, this study supported the ``circuit dysfunction" mechanism of triple network theory and provided new neurodynamic evidence to explain the deficits in salience processing and cognitive regulation observed in AD patients.
+
+\subsection{Direction-Aware Graph Learning Reveals Discriminative Connectivity Patterns}
+
+Motivated by the alterations in directional connectivity revealed by the CFCDBN analysis, we propose a new DA-GNN framework for AD classification. 
+This model leverages directed graph structures as input to capture the topological organization and directionality of information flow in brain networks, thereby improving the identification of AD patients.
+To this end, we extend standard GNN backbones (e.g., GCN, GAT, GSAGE) by introducing a dual-stream design that explicitly distinguishes between incoming and outgoing edges during message propagation. 
+Each DA-GNN variant incorporates a pair of independently parameterized aggregation modules, \(\text{AGG}_{\text{in}}\) and \(\text{AGG}_{\text{out}}\), which extract direction-specific information flows and are fused through a learnable mixing parameter.
+
+Experimental results demonstrate that incorporating directional mechanisms significantly enhances classification performance compared to conventional undirected GNNs and node-only baselines such as SVM and CNN, underscoring the added value of modeling directional dependencies beyond local node features. Among all compared models, the DA-GAT achieves the best performance, likely due to the flexibility of its attention mechanism in capturing asymmetric importance in information flow. In particular, we implement separate attention heads for each edge direction and average their normalized weights, enabling the model to assign distinct relevance scores to directional connections. This design not only improves performance but also supports edge-level interpretability. As shown in Figure~\ref{fig:5}, several highly discriminative connections overlapped with key pathways identified via CFCDBN (e.g., THA$\rightarrow$INS), providing data-driven validation of the learned representations.
+Compared to traditional machine learning approaches and undirected GNNs, the proposed DA-GNN framework offers several key advantages.  
+First, by integrating PAC temporal dynamics and the causal structure of information flow, it captures richer neurophysiological representations relevant to AD.  
+Second, the bidirectional message-passing mechanism enables precise encoding of asymmetric dependencies, which are essential to neural communication yet often neglected in standard graph models.
+Third, the architecture remains lightweight and modular, facilitating generalization to other directed graph tasks without requiring substantial structural modification.
+
+To better highlight the strengths of the proposed framework, we conducted a comparative analysis against several representative methods using the HBN anxiety dataset (see Table~\ref{tab:hbn_comparison}). While some traditional models, such as EEMD+SVM and K-GSCCA, achieved slightly higher peak values in accuracy or specificity, they are typically based on handcrafted features and offer limited interpretability. In contrast, our DA-GNN variants, constructed on directed CFCDBN representations, achieve competitive classification results while also providing model-level interpretability through their direction-aware design. This balance between performance and interpretability makes the proposed framework well-suited for clinical research and decision-making applications in AD.
+
+In summary, this study identifies altered directional connectivity in oscillatory networks among adolescents with AD and presents a graph-based framework that captures these patterns. The proposed DA-GAT model balances predictive performance with interpretability, facilitating the analysis of disorder-related brain dynamics. These results refine our understanding of disrupted subcortical–cortical communication in AD and may inform the design of targeted neuromodulation strategies.
+
+\section{limitaion}
+Although the proposed CFCDBN framework offers a new structured approach for analyzing cross-frequency neural interactions in adolescents with AD, several limitations should be noted. This study focuses on delta–beta interactions, a neural marker frequently linked to anxiety, but does not consider other frequency pairs (e.g., theta–gamma) or alternative coupling forms such as phase–phase (PPC) and amplitude–amplitude coupling (AAC), which may uncover additional anxiety-related mechanisms. Future work will extend the framework to include diverse coupling modes and frequency pairings, potentially improving the characterization of oscillatory dysregulation and informing more targeted neuromodulation strategies.
+In addition, the model has been validated only on a single adolescent dataset, limiting its generalizability and the breadth of mechanistic insight. Further studies involving more heterogeneous cohorts, particularly adults and clinically defined subtypes, are needed to evaluate the robustness and applicability of the framework. In addition, simulated data sets and large-scale data sets will be provided to further assess the sensitivity of directed connectivity to noise and to evaluate the stability of the framework in different sample sizes.
+\section{Conclusion}
+This study introduces the CFCDBN framework, which integrates individualized CFC analysis with directed brain network modeling to investigate oscillatory communication in adolescent anxiety. AD is characterized by aberrant local PAC and disrupted long-range coupling, with prominent left-hemisphere alterations. Notably, a delta–beta pathway involving THA, INS, PCUN, and SPG reflects persistent subcortical-to-cortical communication deficits. Based on these findings, we introduce DA-GNN frameworks that enhances classification performance and reveals biologically meaningful network alterations. This data-driven approach deepens our understanding of oscillatory dysfunction in AD and provides a robust foundation for developing targeted neuromodulation strategies. 
+The CFCDBN framework is not limited to EEG, it can be readily extended to other neuroimaging modalities such as MEG and fMRI, facilitating directed brain network modeling across diverse clinical and research contexts. Core code is available at:(\url{https://github.com/wdxcjnb6/CFCDBN})
+
+
+
+
+
+\noindent {\bf Comment 3.4:} ``{\it It remains unclear how the 34 ROIs were selected and subsequently mapped to the five fixed network patterns. Additionally, the authors should clarify which brain atlas was used to define or divide these ROIs.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 3.4:}
+
+We sincerely appreciate the reviewer’s valuable feedback, which helps us further clarify our methodological choices. Regarding the questions raised, we would like to address them as follows:
+
+The regions of interest (ROIs) were selected based on the widely used AAL (Automated Anatomical Labeling) template, a well-established and widely recognized brain atlas for defining functional and anatomical brain regions \cite{tzourio2002automated}. The AAL template includes predefined regions that are frequently utilized in neuroimaging studies for functional connectivity analysis. Specifically, we used the AAL (116-regions) anatomical template, which provides a comprehensive set of brain regions that are standardized and commonly applied in neuroimaging research.
+
+Regarding the selection of the 34 ROIs, we have provided a detailed explanation \textbf{RESULTS (D. Evaluating Directional Information Flow in Brain Networks for AD Classification and Interpretability Analysis)} section (see \textbf{lines 590-595} in Manuscript with tracked changes). The identification of these ROIs was based on consistent findings from previous neuroimaging studies on anxiety disorders and related conditions, ensuring their scientific validity and alignment with existing literature. Several prior neuroimaging studies were considered as prior knowledge in this selection process, with the primary reference being the 2025 paper ”\textit{Resting-state functional connectivity in anxiety disorders: a multicenter fMRI study}“, published in \textit{Molecular Psychiatry}\cite{langhammer2025resting}. The supplementary materials of this paper provide a detailed outline of the criteria for selecting relevant ROIs for anxiety disorders, which served as a key reference in our own ROI selection process.
+
+Regarding the mapping between anatomical ROIs and the five predefined large-scale functional networks define by\cite{yeo2011organization}, namely the Default Mode Network (DMN), Salience Network (SN), Frontoparietal Network (FPN), Dorsal Attention Network (DAN), and Sensorimotor Network (SMN), we acknowledge that there is currently no universally accepted “gold standard”. To ensure transparency and reproducibility, we primarily followed the network allocation methods reported in \textbf{Table 1} of \cite{takagi2018common} and \textbf{Table S5} of \cite{sun2024brain}, while also considering the results from several other references
+\cite{huang2022mapping,kuang2020default,passow2015default,pedersini2020functional,dixon2018heterogeneity,vossel2014dorsal,chenji2016investigating}. The generated mapping is now provided in \textbf{TABLE III}, and the related description has been included in \textbf{supplementary materials}.
+
+Furthermore, the correspondence between functional and anatomical regions can be established through MNI space coordinates by aligning the spatial coordinates of the centers of each anatomical and functional region, based on their spatial overlap. The corresponding pseudocode is provided in Algorithm 1.
+
+\begin{algorithm}
+\caption{Mapping ROIs to Yeo7 Networks}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Paths to Yeo7 and AAL data files
+\State \textbf{Output:} Network assignment for each ROI
+
+\State \texttt{Load YeoData, AALData}
+
+\State \texttt{Initialize ROINetwork as a 116x7 matrix of zeros}
+
+\For{ROI = 1 to 116}
+    \For{iNetwork = 1 to 7}
+        \State \texttt{Temp = count of voxels in YeoData corresponding to network iNetwork for ROI}
+        \State \texttt{ROINetwork[ROI, iNetwork] = Temp}
+    \EndFor
+\EndFor
+
+\State \texttt{MaxNumber, YeoNetwork = max(ROINetwork, axis=2)}
+
+\State \textbf{Return} MaxNumber, YeoNetwork
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{table}[htbp]
+\centering
+\caption{Brain regions and their corresponding RSNs}
+\begin{tabular}{ccc}
+\toprule
+\textbf{Node} & \textbf{Region(AAL)} & \textbf{RSNs} \\
+\midrule
+1  & Hippocampus\_L        & Default Mode Network (DMN) \\
+2  & Hippocampus\_R        & Default Mode Network (DMN) \\
+3  & Frontal\_Sup\_Medial\_L & Default Mode Network (DMN) \\
+4  & Frontal\_Sup\_Medial\_R & Default Mode Network (DMN) \\
+5  & Precuneus\_L          & Default Mode Network (DMN) \\
+6  & Precuneus\_R          & Default Mode Network (DMN) \\
+7  & Angular\_L            & Default Mode Network (DMN) \\
+8  & Angular\_R            & Default Mode Network (DMN) \\
+9  & Cingulum\_Post\_L     & Default Mode Network (DMN) \\
+10 & Cingulum\_Post\_R     & Default Mode Network (DMN) \\
+11 & Insula\_L             & Salience Network (SN) \\
+12 & Insula\_R             & Salience Network (SN) \\
+13 & Cingulum\_Ant\_L      & Salience Network (SN) \\
+14 & Cingulum\_Ant\_R      & Salience Network (SN) \\
+15 & Amygdala\_L           & Salience Network (SN) \\
+16 & Amygdala\_R           & Salience Network (SN) \\
+17 & Thalamus\_L           & Salience Network (SN) \\
+18 & Thalamus\_R           & Salience Network (SN) \\
+19 & Frontal\_Mid\_L       & Frontoparietal Network (FPN) \\
+20 & Frontal\_Mid\_R       & Frontoparietal Network (FPN) \\
+21 & Parietal\_Inf\_L      & Frontoparietal Network (FPN) \\
+22 & Parietal\_Inf\_R      & Frontoparietal Network (FPN) \\
+23 & Frontal\_Inf\_Tri\_L  & Frontoparietal Network (FPN) \\
+24 & Frontal\_Inf\_Tri\_R  & Frontoparietal Network (FPN) \\
+25 & Frontal\_Sup\_L       & Dorsal Attention Network (DAN) \\
+26 & Frontal\_Sup\_R       & Dorsal Attention Network (DAN) \\
+27 & Parietal\_Sup\_L      & Dorsal Attention Network (DAN) \\
+28 & Parietal\_Sup\_R      & Dorsal Attention Network (DAN) \\
+29 & Postcentral\_L        & Sensorimotor Network (SMN) \\
+30 & Postcentral\_R        & Sensorimotor Network (SMN) \\
+31 & Precentral\_L         & Sensorimotor Network (SMN) \\
+32 & Precentral\_R         & Sensorimotor Network (SMN) \\
+33 & Supp\_Motor\_Area\_L  & Sensorimotor Network (SMN) \\
+34 & Supp\_Motor\_Area\_R  & Sensorimotor Network (SMN) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\newpage
+
+\vspace{4mm}
+
+\noindent {\bf Comment 3.5:} ``{\it The parameter settings for transfer entropy are not clearly described. In particular, it is important to specify key parameters such as the time delay used in the computation.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 3.5:} 
+
+We thank the reviewer for raising this important point. In response, we have provided a more comprehensive description of the transfer entropy (TE) computation and the key parameters involved, and have made the corresponding modifications and additions in the manuscript.
+
+Directed connectivity was estimated using the MuTE MATLAB toolbox (Montalto et al., 2014\cite{montalto2014mute}, available at \url{https://github.com/montaltoalessandro/MuTE}). specifically adopting the BINNUE method. This method combines a binned probability estimator (BIN) with non-uniform embedding (NUE), which has been demonstrated to achieve an optimal balance between computational efficiency and estimation accuracy in multivariate TE analysis. For the TE computation, all selected ROIs were analyzed at a sampling rate of 30 Hz. A model order of 5 was selected, corresponding to a 0.167-second history window, to account for delayed dependencies between the driving and target signals. This time window was chosen based on previous studies indicating that large-scale EEG microstate dynamics typically evolve at intervals of 80–120 ms\cite{khanna2015microstates}. Given this, we believe that a temporal resolution of approximately 33 ms (i.e., 30 Hz) is sufficient to capture the macroscopic dynamics of information flow. Probability distributions were estimated using six quantization levels, leveraging non-uniform entropy estimation. Statistical significance was evaluated using 200 surrogate datasets, with connections retained at a significance threshold of  $\alpha$ = 0.05. To ensure strict causal directionality, present-time values were excluded from the embedding, and no scalp conduction correction was applied in the analysis.
+
+In response to the suggestion provided by Reviewer 1, we have newly incorporated the computation of Phase Transfer Entropy (PTE) as an additional analysis in our study. For the detailed parameter settings of PTE computation, we followed the configurations reported in previous studies \cite{das2020spatiotemporal, das2022electrophysiological, das2022replicable,das2022causal,das2024frequency}. 
+
+In the analysis of predictive information flow, the bin width of the phase histograms was determined as $3.49 \times \mathrm{STD} \times M^{-1/3}$, where $\mathrm{STD}$ denotes the standard deviation of the phase time series $\{x_t^p\}$ and $M$ represents the number of sign changes within the phase variation interval. The prediction delay $\tau$ was set to $2M/M_\pm$, with $M_\pm$ indicating the number of zero crossings in the phase series. It is worth noting that PTE is relatively robust to the choice of $\tau$, and moderate adjustments of the bin width or delay parameter do not substantially alter the results. The specific implementation of the PTE algorithm was adapted from the MATLAB code provided in \cite{das2022causal} (\url{https://github.com/scsnl/Das_Cortex_2021}). These details have been included in the \textbf{supplementary materials} to enhance transparency and reproducibility of the results.
+
+
+The corresponding revisions have been incorporated into the \textbf{MATERIALS AND METHOD (E. Construction of CFC-based directed brain network \textit{(5) Construction of the CFCDBN)}} section (see \textbf{lines 424–427} in Manuscript with tracked changes).
+\vspace{10mm}
+
+
+\begin{center}
+    {\large \textbf{Acknowledgments}} \\[3mm]
+    \begin{minipage}{0.9\textwidth}
+   \textit{  \textbf{Finally, we would like to express our sincere appreciation to the editors and anonymous reviewers for their invaluable time and effort spent in reviewing the manuscript. Their insightful and constructive comments have significantly contributed to enhancing both the clarity and quality of this manuscript.}}
+    \end{minipage}
+\end{center}
+\vspace{4mm}
+
+
+
+
+
+
+
+
+
+\vspace{11pt}
+\vfill
+\begin{refcontext}[sorting=none]  
+    \printbibliography  
+\end{refcontext}
+\end{document}
+
+

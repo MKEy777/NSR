@@ -71,6 +71,7 @@ def build_da_snn(
     use_dsgm: bool = True,
     use_ttfs_encoder: bool = True,
     use_dynamic_window: bool = True,
+    spiking_hidden_dims: tuple[int, ...] = (64, 32),
 ) -> DA_SNN:
     cfg = DATASET_CONFIGS[dataset_name]
     in_channels, height, width = cfg.input_shape
@@ -91,9 +92,13 @@ def build_da_snn(
     if use_ttfs_encoder:
         model.add(DF_TTFS_Encoder(t_min=0.0, t_max=1.0))
     model.add(nn.Flatten())
-    model.add(SpikingDense(64, "dense_1", input_dim=flattened_dim))
-    model.add(SpikingDense(32, "dense_2", input_dim=64))
-    model.add(SpikingDense(cfg.num_classes, "dense_output", input_dim=32, outputLayer=True))
+    if not spiking_hidden_dims or any(units < 1 for units in spiking_hidden_dims):
+        raise ValueError("spiking_hidden_dims must contain at least one positive layer width.")
+    previous_dim = flattened_dim
+    for layer_index, units in enumerate(spiking_hidden_dims, start=1):
+        model.add(SpikingDense(units, f"dense_{layer_index}", input_dim=previous_dim))
+        previous_dim = units
+    model.add(SpikingDense(cfg.num_classes, "dense_output", input_dim=previous_dim, outputLayer=True))
     model.apply(custom_weight_init)
 
     cur_t_min = 0.0

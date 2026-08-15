@@ -1,0 +1,1192 @@
+                                    Article                                                                                              https://doi.org/10.1038/s41467-024-51110-5
+
+
+                                    High-performance deep spiking neural
+                                    networks with 0.3 spikes per neuron
+
+                                    Received: 20 November 2023                       Ana Stanojevic1,2, Stanisław Woźniak 1             , Guillaume Bellec 2,3,
+                                                                                     Giovanni Cherubini 1, Angeliki Pantazi            1
+                                                                                                                                         & Wulfram Gerstner2,3
+                                    Accepted: 29 July 2024
+
+
+                                                                                     Communication by rare, binary spikes is a key factor for the energy efﬁciency
+                                        Check for updates                            of biological brains. However, it is harder to train biologically-inspired spiking
+                                                                                     neural networks than artiﬁcial neural networks. This is puzzling given that
+                  1234567890():,;
+1234567890():,;
+
+
+
+
+                                                                                     theoretical results provide exact mapping algorithms from artiﬁcial to spiking
+                                                                                     neural networks with time-to-ﬁrst-spike coding. In this paper we analyze in
+                                                                                     theory and simulation the learning dynamics of time-to-ﬁrst-spike-networks
+                                                                                     and identify a speciﬁc instance of the vanishing-or-exploding gradient pro-
+                                                                                     blem. While two choices of spiking neural network mappings solve this pro-
+                                                                                     blem at initialization, only the one with a constant slope of the neuron
+                                                                                     membrane potential at threshold guarantees the equivalence of the training
+                                                                                     trajectory between spiking and artiﬁcial neural networks with rectiﬁed linear
+                                                                                     units. For speciﬁc image classiﬁcation architectures comprising feed-forward
+                                                                                     dense or convolutional layers, we demonstrate that deep spiking neural net-
+                                                                                     work models can be effectively trained from scratch on MNIST and Fashion-
+                                                                                     MNIST datasets, or ﬁne-tuned on large-scale datasets, such as
+                                                                                     CIFAR10, CIFAR100 and PLACES365, to achieve the exact same performance as
+                                                                                     that of artiﬁcial neural networks, surpassing previous spiking neural networks.
+                                                                                     Our approach accomplishes high-performance classiﬁcation with less than 0.3
+                                                                                     spikes per neuron, lending itself for an energy-efﬁcient implementation. We
+                                                                                     also show that ﬁne-tuning spiking neural networks with our robust gradient
+                                                                                     descent algorithm enables their optimization for hardware implementations
+                                                                                     with low latency and resilience to noise and quantization.
+
+
+
+                                    Similar to the brain, neurons in spiking neural networks (SNNs) com-      reduces the resource usage in the network10–15; however, it has been so
+                                    municate via short pulses called spikes that arrive in continuous time—   far impossible to train deep SNNs that perform at the exact same level
+                                    in striking contrast to artiﬁcial neural networks (ANNs) where neurons    as ANNs.
+                                    communicate by the exchange of real-valued signals in discrete time.           Multiple methods have been proposed to train the parameters of
+                                    While ANNs are the basis of modern artiﬁcial intelligence with            SNNs. Traditionally, they were trained with plasticity rules observed in
+                                    impressive achievements1–3, their high performance on various tasks       biology16,17, but it appears more efﬁcient to rely on gradient-descent
+                                    comes at the expense of high energy consumption4–6. In general, high      optimization (backpropagation) as done in deep learning18. One of the
+                                    energy consumption is a challenge in terms of sustainability and          most successful training paradigms for SNNs views each spiking neu-
+                                    deployment in low-power edge devices7–9. SNNs may offer a potential       ron as a discrete-time recurrent unit with binary activation and uses a
+                                    solution due to their sparse binary communication scheme that             pseudo-derivative or surrogate gradient on the backward pass while
+
+
+                                    1
+                                     IBM Research Europe – Zurich, Rüschlikon, Switzerland. 2School of Computer and Communication Sciences, École Polytechnique Fédérale de Lausanne,
+                                    Lausanne, Switzerland. 3School of Life Sciences, École Polytechnique Fédérale de Lausanne, Lausanne, Switzerland. e-mail: stw@zurich.ibm.com
+
+
+                                    Nature Communications | (2024)15:6793                                                                                                           1
+Article                                                                                                   https://doi.org/10.1038/s41467-024-51110-5
+
+
+keeping the strict threshold function in the forward pass19–23. Other        networks and TTFS networks inspired by ref. 41. Together, these two
+approaches24–26 either translate the ANN activations into SNN spike          ingredients enable the following contributions. First, we identify ana-
+counts to train the SNN with the ANN gradients, or use temporal              lytically that SNN training is typically unstable due to a severe
+coding with a large number of spikes. Both jeopardize the energy             vanishing-or-exploding gradient problem18,59,60 which arises when
+efﬁciency, because the number of spikes is directly related to energy        naively using ANN parameter initialization in TTFS networks. Second,
+consumption, in digital14,27,28 as well as in mixed analog-digital neuro-    we explain why even with corrected parameter initialization and exact
+morphic systems12.                                                           gradient updates the performance of a trained TTFS network is typi-
+     In contrast to spike-count measures or rate coding in                   cally worse than that of the corresponding ReLU network. We identify a
+neuroscience29 and real-valued signals in ANNs18, it was found in sen-       speciﬁc TTFS-network parameterization (identity mapping) that
+sory brain areas that neurons also encode information in the exact           ensures an even stricter condition, i.e., gradient descent in the SNN
+timing of the ﬁrst spike, i.e., more salient information leads to earlier    follows the same learning trajectories as in the equivalent ReLU net-
+spikes30–32 which in turn leads to a fast response to stimuli33–35. Speci-   work. Third, implementing these theoretical considerations enables
+ﬁcally, we focus on a time-to-ﬁrst-spike (TTFS) coding scheme36–38, in       TTFS networks to be trained to the exact same accuracy as deep ReLU
+which each neuron ﬁres at most a single spike. With less than one spike      networks on standard image classiﬁcation datasets, such as MNIST and
+per neuron, SNNs with TTFS coding (TTFS networks), are an excellent          Fashion-MNIST (fMNIST), and ﬁne-tuned to operate with <0.3 spikes/
+choice for energy-efﬁcient inference.                                        neuron on larger datasets, such as CIFAR10, CIFAR100, and PLA-
+     Interestingly, recent works in the ﬁeld of microelectronics have        CES365. Our results surpass the performance of all previous SNNs,
+also demonstrated the beneﬁts of leveraging temporal coding for              including those that relied on approximations of gradients or
+computations independently from the research on TTFS networks.               mappings12,39,40,49–53,57,58. Our approach paves the way to convert high-
+Similarly to a TTFS neuron model receiving information encoded in the        performance pre-trained ANNs to TTFS networks and ﬁne-tune them
+timing (the exact spike arrival time) and computing a weighted sum of        to the speciﬁc hardware characteristics while optimizing for low
+inputs spikes in its membrane potential which is then compared to a          latency or minimizing energy by reducing the number of spikes per
+threshold39–41, a time-domain vector multiplication circuit receives         neuron.
+information encoded in the timing (the duration of a square wave, yet
+irrespective of its arrival time) and computes a weighted sum through        Results
+integration of input current sources into an output capacitor whose          The SNN architecture with TTFS coding
+voltage is then compared to a threshold42,43.                                Inspired by the fast processing33,34 in the brain (Fig. 1a), we study deep
+     For future implementations of high-performance deep TTFS                SNNs consisting of neurons which are arranged in N hidden layers
+networks, a critical piece of the puzzle is, however, still missing.         where the spikes of neurons in layer n are sent to neurons in layer n + 1
+Energy-optimized hardware always comes with constraints such as              (Fig. 1b). The layers are either fully connected (i.e., each neuron
+limited weight precision that requires quantization or spiking               receives input from all neurons in the previous layer) or convolutional
+sparsity in digital hardware14,27,44,45, and parameter mismatch or           (i.e., connections are limited to be local and share weights). In the
+noise in analog hardware24,46. The known solutions for addressing            following equations, an upper index refers to the layer number while
+these constraints are either to train from scratch a custom                  column vectors, denoted in boldface, refer to all neurons in a
+hardware-speciﬁc model or to initialize with a converted model and           given layer.
+ﬁne-tune to ﬁt the hardware constraints24. In both cases, we need                  The D real-valued inputs, such as pixel intensities, are ﬁrst scaled
+parameter optimization algorithms. However, in TTFS networks                                                                                               T
+                                                                             to the interval [0, 1], resulting in the vector xð0Þ = ðx ð0Þ  ð0Þ          ð0Þ
+                                                                                                                                       1 , x2 , . . . , xD Þ
+none of the known gradient-descent learning algorithms12,40,47–50 is
+robust enough to generalize to deep neural networks making these             where x ð0Þ
+                                                                                     j   2 ½0, 1, and then encoded into spiking times of the SNN
+standard training pipelines impracticable for spiking neuromorphic           input layer using TTFS coding (Fig. 1b). A high input pixel intensity
+hardware.
+                                                                                                                        ð0Þ
+                                                                             leads to an early spike at time t jð0Þ = t max  τ c x ð0Þ
+                                                                                                                                    j , and speciﬁcally for
+     Training TTFS networks with gradient descent has a long history47.      x jð0Þ = 0 no spike will be emitted. The conversion parameter τc trans-
+Using the spike response model37 it is possible to calculate back-
+propagation gradients with respect to spike timing and parameters47.         lates unit-free inputs into time units. The potential V ðnÞ
+                                                                                                                                     i ðtÞ of a neuron i
+While the original paper states that the learning rule contains an           in hidden layer n ≥ 1 is initialized at zero and described by integrate-
+approximation, it turns out to be the exact gradient when the number         and-ﬁre dynamics with linear post-synaptic potential (Fig. 1c), which
+of spikes is ﬁxed, i.e., the presence or absence of a spike per neuron       we view as a linearization of a classical double-exponential ﬁlter12,50, see
+remains unchanged12,40,48–51. However, unless ad-hoc gradient approx-        Supplementary Note 1. Given the spike times t ðn1Þ
+                                                                                                                           j     of neurons j in the
+imations are introduced52,53, none of these theoretically sound studies      previous layer, the potential V ðnÞ
+                                                                                                             i follows the dynamics:
+could train a spiking network with more than six layers to high per-
+                                                                                               8                         
+formance. An alternative that avoids the training altogether is to                                 ðnÞ P
+                                                                                      dV iðnÞ < Ai + j W ij H t  t j
+                                                                                                         ðnÞ        ðn1Þ
+                                                                                                                                  for t < t ðnÞ
+convert directly an ANN into an SNN, using either rate coding54,55 or              τc        =
+                                                                                                                                            min
+                                                                                                                                                          ð1Þ
+                                                                                       dt      : ðnÞ                                    ðnÞ
+temporal coding in SNNs36,39,41,56–58. While most of the conversions                             B i                              for t min ≤ t ≤ t ðnÞ
+                                                                                                                                                    max
+relied on approximate mapping algorithms, it was recently shown that
+                                                                                         ðnÞ
+an approximation-free conversion from an ANN with rectiﬁed linear            where the t min and t ðnÞ
+                                                                                                   max are temporal bounds separating two regimes of
+units (ReLU network) to a TTFS network is possible41. In spite of the        membrane potential behavior (Fig. 1c). Here BðnÞ               ðnÞ
+                                                                                                                               i > 0 and Ai are scalar
+existence of a mapping between ANNs and SNNs36,41, training or ﬁne-          parameters, W ðnÞ
+                                                                                             ij is the synapse   strength from neuron j to neuron    i, and
+tuning deep SNNs with gradient descent in the TTFS setting has               H denotes the Heaviside function which takes a value of 1 for positive
+remained challenging, suggesting that unknown difﬁculties arise dur-         arguments and is 0 otherwise. In the ﬁrst regime, for t < t ðnÞ
+                                                                                                                                           min , the slope
+ing spike-time optimization.                                                 of the voltage trajectory starts with a value AiðnÞ and increases or
+     Here we theoretically analyze why training deep TTFS networks           decreases after each spike arrival, depending on the sign of W ijðnÞ ,
+has encountered difﬁculties in closing the gap in performance com-           whereas at the time t = t ðnÞmin the potential enters the second regime,
+pared to ANNs, and we provide a solution that closes this gap. Our           switching the slope to a ﬁxed positive value BiðnÞ . When the potential
+approach relies on the combination of exact backpropagation                  V ðnÞ                           ðnÞ
+                                                                               i reaches the threshold ϑi , neuron i generates a spike at time t i
+                                                                                                                                                         ðnÞ
+
+updates40,47–49,51 with an exact revertible mapping between ReLU
+
+
+Nature Communications | (2024)15:6793                                                                                                                      2
+Article                                                                                                                            https://doi.org/10.1038/s41467-024-51110-5
+
+
+                  a                                      b                          …                            c                               ( )                ( )
+                                                               +1                                                      ( )                       min                max
+                                               …                                                                                                             ( )
+                                                                                                                                                                          ( )
+                                                                                    …
+                                                                                                                                                       ( )
+
+                                               …                                                                             ( )
+                                                               −1                   …
+                                                                                                                                           ( )                ( )
+                                                                                    …                                               < min              > min
+                                                   …                                                                   0
+                                                               0                    …
+
+                                                                                                                       ( −1)          ( −1)      ( −1)
+                                                                                                                       min                       max
+                                                                                                               (0)
+                                                                                                               max
+                                                                                            No spike
+                                                                                             (0)
+
+
+
+
+Fig. 1 | Network of TTFS neurons. a An image is processed in the brain through the          a function of time. The initial slope is AðnÞ
+                                                                                                                                        i (here the same value for all neurons). In
+rapid transmission of spikes between neurons34,71. Yellow color denotes active              the ﬁrst regime t < t ðnÞ
+                                                                                                                  min (pink), the slope changes as the input spikes arrive, and in
+neurons, and red color represents the generated spikes (schematic). b A feed-               the second regime t > t ðnÞ                                   ðnÞ
+                                                                                                                      min (gray), the slope is ﬁxed at Bi . The neuron spikes if its
+forward TTFS-network architecture receives spikes, where earlier spiking times              potential reaches the spiking threshold ϑðnÞ  i  before t ðnÞ
+                                                                                                                                                          .
+                                                                                                                                                      max Spikes are red, spiking
+encode more salient information in the image30, e.g., receptive ﬁelds around a lotus        threshold is purple, and three shades of green indicate evolution of V ðnÞ  i for three
+ﬂower (dashed circle, bottom). c The potential V ðnÞ
+                                                 i for different neurons i varies as        different neurons i.
+
+
+
+
+and sends it to the next layer. The threshold ϑðnÞ is deﬁned as                             where M is a function that maps the weights W ðnÞ ij of the TTFS network
+                                               i
+            ðnÞ                                                                             to the weights wðnÞ
+                                                                                                              ij of the ReLU network with the parameter Bi
+                                                                                                                                                                       ðnÞ
+ϑiðnÞ = def e
+            ϑi  DðnÞ where DiðnÞ is a trainable parameter initialized at 0
+                  i                                                                         deﬁned in Eq. (1). Then, for the vector x(0) of input activations, the
+      ðnÞ
+and e
+    ϑi is a ﬁxed base threshold, deﬁned to be large enough to prevent                       reverse mapping in Eq. (2) deﬁnes uniquely a ReLU network with
+               ðnÞ
+ﬁring before t min , see Supplementary Note 2. Importantly, we also                         activation vectors x(n) in layer n such that x iðnÞ = ðt ðnÞ      ðnÞ
+                                                                                                                                                      max  t i Þ=τ c for
+        ðnÞ                       ðnÞ                                                       neurons that ﬁre a spike and x ðnÞ = 0 for neurons  in the SNN  that  do not
+deﬁne t max , such that for t ≥ t max emission of a spike is impossible, e.g.,                                             i
+                                                                                            ﬁre a spike (see section “Methods” for proof). For the non-spiking
+implemented by a de-charging current for t ≥ t ðnÞ
+                                                 max which resets the
+                                                                                            output layer N + 1, we allow for a value AðN
+                                                                                                                                      i
+                                                                                                                                         + 1Þ
+                                                                                                                                              ≠ 0 (section “Methods”).
+membrane potential to zero (Fig. 1c). Once a neuron spikes we assume
+a long refractory period to ensure that every neuron spikes at most                         The reverse mapping is then given by wijðN + 1Þ = def W ijðN + 1Þ and
+once. The construction of t ðnÞ       ðnÞ                     ðnÞ
+                            min and t max is recursive with t min =
+                                                                    def ðn1Þ
+                                                                       t max .               ðN + 1Þ
+                                                                                            bi         = def ðt ðNÞ     ðNÞ    ðN + 1Þ
+                                                                                                                max  t min Þ Ai       ,    yielding         at     the    read-out   time
+                                                                                              ðN + 1Þ
+    The model deﬁned by Eq. (1) is rather general and contains several                      t read    = t ðNÞ
+                                                                                                          max the same logits and cross-entropy loss L at the output of
+other models as special cases. It is identical to the integrate-and-ﬁre                     the TTFS network as in the equivalent ReLU network41.
+                      ðnÞ P
+model if we set BðnÞ
+                 i = Ai +
+                                ðnÞ    ðnÞ     ðn1Þ
+                            j W ij Hðt min  t j     Þ; we note that in this
+                                                                                                 The weight mapping function M deﬁned in Eq. (2) is a funda-
+case the parameter BðnÞ
+                     i depends on the sequence of spikes that have                          mental pillar in the theoretical analysis of the learning dynamics in the
+arrived from the previous layer. In order to avoid this dependency, an                      next section. Due to the fact that there is an exact reverse mapping
+earlier study41 related BðnÞ
+                           i   to AiðnÞ via an auxiliary parameter                          from TTFS network to ReLU network, we know that two networks will
+                     ðnÞ def ðnÞ P
+  ðnÞ def ðnÞ
+α i = Ai > 0 and Bi = α i + j W ðnÞ    ij . We use this latter model as a
+                                                                                            have the identical loss for the same input. However, a particular choice
+                                                                                            of the function M determines whether this loss results in equal gra-
+comparison point with the choice α iðnÞ = 1, and call it the α1-model.
+                                                                                            dients with respect to the weights W ðnÞ   ij  and wijðnÞ , therefore likely
+      It is known that any ReLU network can be mapped to the                                inﬂuencing the stability of the SNN training. Importantly, the para-
+α1-model41, but the mapping theory can be extended to our more                              meter BðnÞ
+                                                                                                    i , which represents the slope of the potential at the moment
+general model with arbitrary parameters BðnÞ i . In the following, we set                   of threshold crossing (when time is measured in units of τc; see Eq. (1)
+always AiðnÞ = 0, but keep BðnÞ
+                             i  arbitrary. We now describe an exact                         and Fig. 1c), will play a crucial role.
+reverse mapping which uniquely deﬁnes the parameters of an
+equivalent ReLU network (up to the intrinsic scaling symmetry of ReLU                       The vanishing-or-exploding gradient problem in SNNs
+units) with the same architecture as that of the SNN. Given the weights                     The TTFS network deﬁned in Eq. (1) is represented in continuous time
+W ðnÞ                  ðnÞ
+  ij and thresholds ϑi of the SNN, the weight matrices w and bias
+                                                              (n)
+                                                                                            and trained using exact backpropagation, where the derivatives are
+           (n)
+vectors b of the equivalent ReLU network are:                                               computed with respect to the spiking times. Previous TTFS networks,
+                                                                                            which are trained with exact gradients, primarily utilize shallow
+                                                                                            architectures with only one hidden layer12,49–51, or they employ gradient
+                             W ijðnÞ                                                      approximations when training deeper networks52,53. The question
+                                                   ðnÞ       ϑðnÞ       t ðnÞ     ðnÞ
+                                                                          max  t min
+  wðnÞ = def
+             M   W ðnÞ
+                         = def
+                                         and   bi = def      i
+                                                                    +                 ,     arises: why does the exact gradient approach not scale well to larger
+                               BðnÞ                          BðnÞ             τc
+   ij              ij
+                                i                             i                             networks? In this section, we demonstrate that deep TTFS networks
+                                                                                      ð2Þ   generically cause vanishing-or-exploding gradients, known as the
+
+
+Nature Communications | (2024)15:6793                                                                                                                                                   3
+Article                                                                                                                            https://doi.org/10.1038/s41467-024-51110-5
+
+
+vanishing-gradient problem18,59,60, which we address in the following                              n − 1 shifts by a small amount. Similarly to a ReLU network, the mask
+analysis.                                                                                          reﬂects the fact that in our SNN spike times only shift for active
+     The activity of the SNN at layer n is summarized by the vector of                             neurons where the active neurons in an arbitrary layer n0 of our SNN
+                                                                                                                               ðn0 Þ
+spike timings t(n) such that the loss with respect to the weights para-                            are those that ﬁre before t max   . Importantly, the causality of interactions
+meters at layer n factorizes as:                                                                   in the feed-forward path is limited to chains of active neurons; and the
+                                                                                                   backpropagation of errors via the chain rule in Eq. (3) limits the
+               dL                 dL        dVðN + 1Þ dtðNÞ       dtðn + 1Þ dtðnÞ                  information ﬂow backward to the same paths of active neurons, as
+                        =                                     ...                 ,          ð3Þ
+                  ðnÞ
+             dW             dV    ðN + 1Þ
+                                             dt ðNÞ
+                                                     dt ðN1Þ
+                                                                   dtðnÞ dWðnÞ                     made explicit by the mask.
+                                                                                                        In the ANN literature59,61,62, a method to tackle the problem of
+where V(N+1) is a vector containing potentials of neurons in the output                            vanishing-or-exploding gradients at initialization is to make sure that
+layer N + 1 at time t ðN + 1Þ
+                      min . Formally, for the deﬁnition of the ﬁring time                          the largest eigenvalues of the Jacobian are close to 1 in absolute value.
+vector t , the ﬁring time of non-spiking neurons is set to an arbitrary
+        (n)
+                                                                                                   Following classical work in the ﬁeld of ANNs, we assume that M(n−1) has a
+                                                                       ðn + 1Þ
+constant, so that its derivative vanishes. If the product of dtdtðnÞ                                                                                                       ðnÞ
+                                                                                                   small impact on the distribution of the eigenvalues of dtdtðn1Þ 61,62. With
+Jacobians is naively deﬁned, the amplitude of this gradient might                                  this assumption, the focus in a standard ReLU network is just on the
+vanish or explode exponentially fast as the number of layers                                       largest eigenvalue of the weight matrix w(n)61,62. However, in the case of
+becomes large.                                                                                     a TTFS network, a new problem arises due to the fact that the weight
+     To calculate analytically the Jacobian of the SNN, we deﬁne a                                 matrix W(n) is multiplied by 1/B(n); see Eq. (4). Therefore, the eigenvalues
+diagonal matrix M(n) with elements M ðnÞ           ðnÞ     ðnÞ
+                                     ij = δ ij Hðt max  t i Þ that are 1 if
+                                                                                                                             ðnÞ
+                                                                                                   of the Jacobian dtdtðn1Þ are strongly determined by the diagonal matrix
+and only if spike t ðnÞ               ðnÞ
+                    i occurs before t max . The Jacobian of the network                            B(n) and not only by the weight matrix W(n) of the SNN.
+can then be written as ( ⋅ is the matrix multiplication), see section
+                                                                                                         In Fig. 2, we demonstrate numerically that initializing the weight
+“Methods” for calculations:
+                                                                                                   matrix W(n) using standard deep learning recipes can result in
+                                                                                                   vanishing-or-exploding gradients. The weight matrix of an SNN is
+                     dtðnÞ              1
+                            = M ðn1Þ  ðnÞ  W ðnÞ = M ðn1Þ wðnÞ :                         ð4Þ   initialized with W ðnÞ = pﬃﬃﬃﬃﬃﬃ
+                                                                                                                              1
+                                                                                                                                    N ð0,1Þ where 340 is the number of units in
+                    dtðn1Þ            B                                                                                     340
+                                                                                                   each of the eight layers (this is one of the many standard choices in
+                                                                                                   deep learning18) so the eigenvalue of W(n) with the largest absolute
+where the matrix B          (n)
+                                  is the diagonal matrix with elements BðnÞ
+                                                                        i . From                   value is close to 1. We study two models, the α1-model41 illustrated in
+the exact reverse mapping, we know that the diagonal matrix M acts
+                                                                                                   Fig. 2a, which we introduced above, and a model with BiðnÞ = 1 for all
+like a binary mask with elements M ðnÞ  ii = 1 if and only if the equivalent
+ReLU unit i in layer n has a non-zero output. Intuitively, the element                             neurons and layers, illustrated in Fig. 2c, that we will call the B1-model.
+(i, j) of the Jacobian of Eq. (4) evaluates how much the spike time of a                           As shown in Fig. 2b, the standard deep learning initialization produces
+                                                                                                   multiple eigenvalues with moduli larger than 1 in a single layer of the
+neuron i in layer n changes if the spike time of neuron j in layer
+
+                                                 a       ( )                   ( )             ( )             b        Im         Eigenvalues
+                                                                               min             max                  4
+                                                                                      ( )
+                                                                                                     ( )
+
+                                                                                        =1
+                            -model:                                 =1                                              0
+                                                                                                                                                               ( )
+                                                        0                                                                                                     ( )
+                                                                                                                                                              ( )
+                                                                                                                   -4
+                                                            ( −1)     ( −1)     ( −1)                                                                                Re
+                                                                                max                                     -4            0               4
+                                                            min
+
+
+                                                 c       ( )                   ( )             ( )            d         Im
+                                                                               min             max                                   Eigenvalues
+                                                                                                                    4
+                                                                                        ( )
+                                                                                                     ( )
+
+
+                        1-model:                                    =0
+                                                                                        =1
+                                                                                                                    0
+                                                        0
+                                                                                                                                                               ( )
+                                                                                                                                                              ( )
+                                                            ( −1)    ( −1)      ( −1)                              -4
+                                                                                                                                                                     Re
+                                                            min                 max                                     -4             0               4
+
+
+
+Fig. 2 | Eigenvalues of the SNN Jacobian for different models under standard                       the α1-model Jacobian spread beyond the unit circle as BðnÞ
+                                                                                                                                                             i ≠ 1, i.e., the network will
+deep learning initialization. a In α1-model the initial slope is AðnÞ     ðnÞ
+                                                                    i = α i = 1 and in             experience exploding gradients at initialization. c In B1-model the initial slope is
+the second regime the slopes of all neurons i are set to neuron-speciﬁc slopes                     AðnÞ
+                                                                                                     i = 0 and in the second regime the slopes of all neurons i are set exactly to 1.
+derived from α ðnÞ
+               i = 1. Spikes are red, spiking threshold is purple, and three shades of             d The eigenvalues of the B1-model Jacobian spread inside the unit circle as BðnÞi = 1,
+green indicate evolution of V ðnÞ
+                               i for three different neurons i. b The eigenvalues of               i.e., the network will not experience the exploding gradient at initialization.
+
+
+
+Nature Communications | (2024)15:6793                                                                                                                                                   4
+Article                                                                                                                            https://doi.org/10.1038/s41467-024-51110-5
+
+
+                                a                       100                                         b               1
+
+
+
+
+                                    Training Accuracy [%]
+                                                                                       ReLU
+
+
+
+
+                                                                                                        Cosine Similarity
+                                                                                        1-model                                           1-model
+                                                                                        1-model                                           1-model
+                                                            90
+
+
+
+
+                                                            80                                                       0
+                                                                 0            50            100                             0     50            100
+                                                                            Epochs                                              Epochs
+
+Fig. 3 | Learning in eight-layer SNNs on the MNIST dataset for different models                   from the ReLU-network training curve (dark blue). If one continues the training, it
+and initializations. a A ReLU network with standard deep learning initialization w(n)             eventually converges after around 2000 epochs to 100% training accuracy.
+is trained (red-dashed). The B1-model (identity mapping w(n) = W(n)) with standard                b Cosine similarity measured during training between the weights of the ReLU
+deep learning initialization follows the same training curve (light blue) that con-               network and the weights of the (i) B1-model with standard deep learning initi-
+                                                                              ðnÞ
+verges to 100% training accuracy in <100 epochs. The α1-model (wðnÞ = WðnÞ ) with                 alization (ii) α1-model with smart α1 initialization.
+                                                                           Bi
+smart α1 initialization needs a much smaller learning rate parameter and deviates
+
+
+
+
+α1-model, leading in a network of eight layers to an explosion of the                             ReLU model weight space. This would require to either keep a parallel
+gradient norm already at the beginning of the training.                                           ReLU model and map the results back to the SNN after each update
+     With this insight, we can now deﬁne two different approaches to                              step; or to continuously switch between forward and inverse mapping
+solve the problem. The ﬁrst one uses the α1-model, but with an initi-                             so as to implement appropriate ReLU-equivalent updates in the SNN.
+alization scheme adapted to SNNs. To ﬁnd a smart initialization, we                               However, both methods incur additional overhead and, in case hard-
+ﬁrst initialize the matrix w(n) in the ReLU-network parameter space and                           ware implementation is involved, may introduce potential mismatches
+then use the forward mapping from ReLU network to TTFS network41                                  of precision, noise, and other hardware-related characteristics. Alter-
+to set the weight matrix W(n). We call this the smart α1 initialization. The                      natively, a speciﬁcally designed metric63 that counterbalances update
+other solution uses the B1-model which is the only model where                                    steps could be a solution but is not part of standard gradient optimi-
+weights in the TTFS network and the ReLU network are identical,                                   zation in machine learning.
+see Eq. (2) and section “Methods”. We also refer to this model as                                       In Fig. 3, we illustrate the learning trajectories of the B1-model with
+identity mapping. With both solutions the eigenvalues of the SNN                                  standard deep learning initialization and the α1-model with smart α1
+Jacobian stay, for the standard deep learning initialization, tightly                             initialization, as reported in the training data. Both TTFS networks are
+within the unit circle, showing numerically that the vanishing-gradient                           initialized to be equivalent to the same ReLU network. Nevertheless,
+problem is avoided at initialization (Fig. 2d).                                                   we observe that only the B1-model follows the ReLU network whereas
+                                                                                                  the α1-model diverges away despite a small learning rate.
+The identity mapping makes training equivalent                                                          To test our SNN training more broadly, we perform simulations of
+Both the α1-model with smart initialization and the B1-model                                      the B1-model for different architectures and compare them with earlier
+described in the previous section avoid exploding gradients                                       training approaches of TTFS networks on MNIST and fMNIST datasets.
+at initialization, but there is no guarantee that the same will                                   First, we consider a shallow network with one fully connected hidden
+hold during SNN training. To describe the gradient descent                                        layer (FC2)12,40,49–51. Before training, the ReLU network and TTFS net-
+trajectory of the SNN, we consider a gradient descent step                                        work are initialized with the same parameters and the seed is ﬁxed in
+with learning rate η when applying backpropagation to the                                         order to avoid any other source of randomness. We compare our
+TTFS network: ΔW ijðnÞ =  η dLðnÞ , and compute the corresponding                                network (with 340 neurons in the hidden layer) with published net-
+                                    dW ij
+                                                                                                  works containing 340 or more neurons in the hidden layer. The test
+update δwðnÞ
+         ij in the space of the ReLU-network parameters. Then                                     accuracy of our model is higher than that of all other SNNs (see
+δwðnÞ
+  ij  can be expressed as δwijðnÞ = MðW ðnÞ
+                                        ij  η
+                                               dL            ðnÞ
+                                                 ðnÞ Þ  MðW ij Þ,
+                                                                                                  Table 1).
+                                                                               dW ij
+                                                                                                        Moreover, we tested a 16-layer fully connected SNN (16FC), a
+where wijðnÞ = MðW ijðnÞ Þ, see Eq. (2), see section “Methods”.                                   5-layer ConvNet SNN (LeNet5), and a 16-layer ConvNet SNN (VGG16).
+    With the B1-model, MðW ijðnÞ Þ is the identity function, hence                                For deeper networks, we noticed that, even though the SNN and ReLU
+  ðnÞ                                                                                             network are initialized with the same parameters, sometimes they
+δwij =  η dLðnÞ = ΔW ij . Therefore, for the B1-model the training tra-
+             dW ij
+                                                                                                  exhibit different performance after several epochs due to numerical
+jectories of SNN and ReLU networks are equivalent. By contrast, for the                           instabilities. For this reason, in all cases where the number of hidden
+                                                 P ðnÞ
+α1-model from ref. 41, MðW ðnÞ         ðnÞ
+                             ij Þ = ðW ij Þ=ð1 +  k W ik Þ is a nonlinear                         layers is larger than one we report the average performance across 16
+function (see Eq. (2)) which leads to a difference between the δwðnÞ
+                                                                 ij
+                                                                                                  learning trials with different random initial conditions. As expected
+                                                                                                  from the theory, our SNN with identity mapping (B1-model) achieves
+from the reverse mapping and a direct ReLU-network update obtained
+                                                                                                  the same performance as the ReLU network (Table 1) and surpasses the
+through gradient descent ΔwijðnÞ =  η dLðnÞ . Such a difference cannot be
+                                                                     dwij                         test accuracy of previous works. Given these results, all experiments in
+corrected with a different learning rate η, because the learning rate                             the following sections are executed for SNNs with identity mapping.
+would have to be different not just for each neuron, but also for each
+update step (see section “Methods”). Hence, the gradient descent                                  Spiking sparsity on large benchmarks
+trajectory in the α1-model is systematically different than that of the                           For a long time, tackling larger scale image datasets like CIFAR10064 or
+equivalent ReLU model, even if their initializations are equivalent.                              PLACES36565 (image size 224 × 224 × 3, similar to ImageNet, but
+The same trajectory could be potentially maintained by training in the                            avoiding privacy concerns66) with TTFS networks was considered
+
+
+
+Nature Communications | (2024)15:6793                                                                                                                                              5
+Article                                                                                                                       https://doi.org/10.1038/s41467-024-51110-5
+
+
+Table 1 | Performance after training an SNN using the                                                    The average fraction of spikes per neuron per data point (SNN
+B1-model (ours), compared to trained ReLU networks and                                             Sparsity) directly impacts the energy which is required for the SNN
+SNN baselines                                                                                      inference14,27,28. For example, in digital implementations, memory
+                                                                                                   reads for accessing weights are expensive27, but in a spiking imple-
+ Model                                                       Test accuracy [%]
+                                                                                                   mentation there is no need to access the weights of synapses that have
+                                                             MNIST
+                                                                                                   not observed any spike. In neuromorphic hardware implementations,
+ ReLU                           FC2                          98.30
+                                                                                                   spike transmission costs are likely to dominate energy consumption
+ SNN [ours]                     FC2                          98.30
+                                                                                                   since the spike transmission cost Tr increases signiﬁcantly as the net-
+ SNN50                          FC2                          97.96                                 work scales to a larger number of neurons12,28. Therefore, we expect the
+ SNN40                          FC2                          98                                    energy consumption to be dominated by Tr (see section “Methods”).
+ SNN51                          FC2                          98.2                                  We thus aim to restrict the fraction of spikes per neuron leading to
+ ReLU                           FC16                         98.43 ± 0.07                          high spiking sparsity.
+ SNN [ours]                     FC16                         98.43 ± 0.07                                Spiking can be sparse in time and space. Temporal spiking spar-
+                                                                                                   sity, i.e., temporally rare occurrence of spikes, is inherently warranted
+ ReLU                           VGG16                        99.57 ± 0.01
+                                                                                                   by the TTFS scheme through the fact that it maps a value to a temporal
+ SNN [ours]                     VGG16                        99.58 ± 0.01
+                                                                                                   position of a single spike, initially capping the SNN Sparsity metric to
+                                                             fMNIST
+                                                                                                   1.0. However, there are also spatial notions of sparsity: spatial spiking
+ ReLU                           FC2                          90.14                                 sparsity, i.e., whether a particular neuron will become active at all, and
+ SNN [ours]                     FC2                          90.14                                 spatial weight sparsity, i.e., whether a particular connection will be
+ SNN40                          FC2                          88.1                                  present at all. In this section, we explore spatial spiking sparsity to
+ SNN51                          FC2                          88.93                                 further improve the SNN Sparsity metric below 1.0, and we achieve this
+ ReLU                           LeNet5                       90.91 ± 0.17                          by training with L1 regularization.
+ SNN [ours]                     LeNet5                       90.94 ± 0.25                                We ﬁrst pretrain a ReLU network with L1 regularization and then
+                                                                                                   transfer the weights to the SNN as an initial condition for further ﬁne-
+ SNN40                          LeNet5                       90.1
+                                                                                                   tuning over 16 trials, 10 epochs each. To allow a fair comparison, the
+Models introduced in this work are in bold. The standard deviations are reported from 16 trials.
+                                                                                                   ReLU network also undergoes the same ﬁne-tuning procedure. Table 2
+                                                                                                   shows that L1 regularization pushes the SNN Sparsity (mean across all
+                                                                                                   trials) below 0.3 spikes/neuron. We conclude that the presented
+                                                                                                   approach offers high-performance SNNs with very sparse spiking (as
+                Fine-tuning (FT) of deep SNN
+                                                                                                   low as 0.2 spikes/neuron for CIFAR10) and therefore high energy
+                                                                                                   efﬁciency. Hence, it lends itself to a hardware implementation, where it
+                         VGG16                                                                     can potentially serve as a low-power alternative to state-of-the-art ANN
+                          ReLU                                                                     solutions.
+
+                                                                                                   Fine-tuning for hardware
+                                                                                                   In hardware, the high performance and spiking sparsity of the SNN
+                              Training
+
+
+
+
+                                                                                                   obtained in the software simulations may be affected by physical
+                                                            VGG16
+                                                                                                   imperfections or constraints. Importantly, our training algorithm can
+                                                             SNN                                   be used to ﬁne-tune the SNN parameters given the speciﬁc hardware
+                                                                                                   properties such as noise, quantization, or latency constraints (see
+                                                                                                   section “Methods” for detailed explanation).
+                                                                                                          Let us imagine a ReLU network that was pretrained with full-
+                                            ( )       ( )
+                                                  ,                                                precision weights, mapped to the SNN and then transferred to an SNN
+                                                                                                   device with noise, limited temporal resolution or limited weight pre-
+                              FT
+
+
+
+
+                                                              FT
+
+
+
+
+                                                                                                   cision. To mimic this scenario, we tested ﬁne-tuning in several simu-
+                                                                                                   lated SNNs, each one with a different constraint. To do so, we use a
+Fig. 4 | Conversion followed by ﬁne-tuning for a VGG16 network. A VGG16 SNN                        VGG16 architecture (Fig. 5a–c) ﬁne-tuned for 10 epochs on the
+network (right) is initialized (curly blue arrow) with the weights and biases (red) of a           CIFAR10 dataset. In all three cases (spike time jitter, time-step quan-
+pre-trained VGG16 ReLU network (left), and then ﬁne-tuned (FT) with gradient                       tization, or SNN weight quantization) ﬁne-tuning enables large recov-
+descent using the framework of the B1-model. The pre-trained ReLU network also                     ery of the performance of the unconstrained network. In particular,
+undergoes further ﬁne-tuning using standard backpropagation optimization.                          TTFS VGG16 networks achieve higher than 90% test accuracy on
+                                                                                                   CIFAR10 with 16 time steps per layer or weights quantized to 4 bits.
+                                                                                                          We also investigated whether it is possible to improve the classi-
+                                                                                                   ﬁcation latency through ﬁne-tuning by reducing the intervals
+impossible. To facilitate the training for these larger scale datasets, we                         ½t ðnÞ     ðnÞ
+                                                                                                      min , t max Þ after conversion from ReLU networks. Doing this naively,
+are going to combine conversion from pre-trained VGG16 ReLU                                        without ﬁne-tuning, improves the latency, but the SNN performance
+models (step 1) and ﬁne-tuning of the obtained SNN with gradient                                   drops well below that of the pre-trained ReLU network, because of
+descent for the identity mapping (step 2, Fig. 4). A pre-trained ReLU                              misalignment of the spiking times and the respective intervals. After
+model is downloaded from an online repository65,67 and mapped to the                               ﬁne-tuning, a test accuracy higher than 90% is recovered, while the
+SNN without any loss of performance (similarly to ref. 41). Both net-                              latency can be improved up to a factor of 4 (Fig. 5d). Importantly, the
+works are then ﬁne-tuned for 10 epochs and 16 trials. The results that                             trained network performs well despite the fact that the ﬁrst spike of
+we obtain here through approximation-free learning are the ﬁrst one                                layer n + 1 is potentially ﬁred before the last spike of layer n arrives.
+to close the performance gap in accuracy between deep TTFS net-                                    Thus, processing in different layers is no longer artiﬁcially separated in
+works and deep ReLU networks, see Table 2.                                                         different phases.
+
+
+
+Nature Communications | (2024)15:6793                                                                                                                                      6
+Article                                                                                                                                https://doi.org/10.1038/s41467-024-51110-5
+
+
+Table 2 | Test accuracy and spiking sparsity for a VGG16 architecture
+ Dataset                              Classes                   Test accuracy [%] w/o FT                      Test accuracy [%] w/ FT                                          SNN
+                                                                ReLU                       SNN                ReLU                         SNN                                 Sparsity
+ CIFAR10                              10                        93.5967                    93.59              93.69 ± 0.02                 93.69 ± 0.02                        0.38
+ CIFAR10   52
+                                      10                        –                          –                  –                            91.90                               0.24
+ CIFAR1053                            10                        –                          –                  –                            92.68                               0.62
+ CIFAR10 + L1                         10                        92.82                      92.82              93.28 ± 0.02                 93.27 ± 0.02                        0.20
+ CIFAR100                             100                       70.4867                    70.48              72.23 ± 0.06                 72.24 ± 0.06                        0.38
+ CIFAR10052                           100                       –                          –                  –                            65.98                               0.28
+ CIFAR100 + L1                        100                       69.33                      69.33              72.20 ± 0.04                 72.21 ± 0.04                        0.24
+ PLACES365                            365                       52.6965                    52.69              53.86 ± 0.02                 53.86 ± 0.02                        0.54
+ PLACES365 + L1                       365                       48.67                      48.67              48.88 ± 0.06                 48.85 ± 0.06                        0.27
+The ﬁrst column identiﬁes the dataset and indicates whether L1 regularization was used. The second column gives the number of classes for each task; the third and fourth columns show accuracy
+after pretraining (ReLU) and conversion (SNN) without ﬁne-tuning (w/o FT); and the ﬁfth and sixth columns show the ﬁnal results after ﬁne-tuning (w/ FT). The right-most column presents the average
+number of spikes per neuron (sparsity). The ﬁnal results obtained in this work are in bold. The standard deviations are reported from 16 trials.
+
+
+
+
+                    a     93.70             93.73         93.75                                          b        93.65      93.63       93.63         93.64
+                                                                                  90.83
+                                                                                               84.04                                                                     92.16
+                          93.58             93.48         93.22                                                   93.49      93.52         93.47     93.47
+                                                                                71.07
+                                        Acc [%] w/o FT                                                                    Acc [%] w/o FT
+                                        Acc [%] w/ FT                                     30.18                           Acc [%] w/ FT                             86.01
+
+
+                           0.001                           0.01                                    0.1             4096       1024         256             64            16
+                                            Spiking Time Jitter SD                                                            Time steps per layer
+
+                    c        93.71          93.60        93.08            92.89            91.40         d        93.71      93.65         92.46       90.74         88.06
+
+                             93.51          93.21                                                                 93.59      93.49     90.69
+                                                        83.35
+                                                                       77.27
+
+                                        Acc [%] w/o FT                                                                    Acc [%] w/o FT           44.70
+                                        Acc [%] w/ FT                               21.80
+                                                                                                                          Acc [%] w/ FT
+                                                                                                                                                                 13.13
+
+                               12             10            8               6                  4                  100%        58%          33%             25%           22%
+                                             Number of weight bits                                                                     Latency
+
+Fig. 5 | Fine-tuning for noise robustness, quantization, and latency. VGG16 SNN                          values added to each spike time in the network (spiking time jitter). b Quantizing
+on CIFAR10. In all cases after only 10 epochs of ﬁne-tuning (w/ FT—purple squares)                       spiking times in the network to a given number of time steps per layer.
+the accuracy of the initially mapped network (w/o FT—blue circles) is signiﬁcantly                       c Representing all weights W ðnÞij with given number of bits. d Reducing the latency
+improved. a Accuracy as a function of the standard deviation (SD) of random noise                        by reducing the ranges ½t ðnÞ     ðnÞ
+                                                                                                                                   min , t max Þ.
+
+
+
+
+     Referring back to the theoretical results on the equivalent                                         maintained. In such a scenario, training with ReLU activation clip-
+mapping between TTFS networks and ReLU networks, interesting                                             ping has been shown to improve the Lipschitz bounds of the net-
+parallels can be drawn for each of the results in Fig. 5. First, the                                     work, which provide more out-of-distribution robustness, yet
+spiking time jitter in SNN corresponds to the activation noise in                                        potentially at the expense of decreasing overall accuracy70, which
+ANN, where it has been studied more in the context of beneﬁcial                                          we observed in Fig. 5d.
+regularization effects18 rather than as a hardware constraint.
+Remarkably, we also observe a positive effect on the accuracy after                                      Discussion
+ﬁne-tuning, that slightly improves for moderate spiking time jitter                                      The presented work provides a method to obtain high-performance
+in Fig. 5a. Second, the number of time steps per layer and the                                           sparse SNNs with the exact same performance as ANNs. We achieve
+precision of weights in SNN correspond to the activation and                                             this by identifying and solving the challenging problem of vanishing-
+weight precision in ANN, respectively. Both are critical parameters                                      or-exploding gradients in SNNs. The proposed identity mapping,
+explored in the ANN research, with the industry standard of 8 bits                                       which ensures that all spiking neurons reach the threshold with a tra-
+typically yielding no performance degradation and 4 bits yielding a                                      jectory of ﬁxed slope, is crucial to ensure stability during learning by
+tolerable performance degradation68,69. Accuracy curves in Fig. 5b,                                      gradient descent. Furthermore, we have shown that with the identity
+c follow these trends. Third, the latency constraint analysis of SNN                                     mapping training trajectories of ReLU network and TTFS network are
+corresponds to activation clipping in ANN (see section “Methods”).                                       equivalent. Our results have demonstrated that training or ﬁne-tuning
+While indirectly such clipping may also occur as a side effect of                                        deep TTFS networks yields identical performance to deep ReLU net-
+activation precision reduction in ANNs, here the precision is                                            works on MNIST, fMNIST, CIFAR10, CIFAR100, and PLACES365
+
+
+Nature Communications | (2024)15:6793                                                                                                                                                             7
+Article                                                                                                    https://doi.org/10.1038/s41467-024-51110-5
+
+
+datasets; achieves high spiking sparsity crucial for energy efﬁciency;       ours requires strict synchronization. What is important for our theory
+and enables to compensate for hardware constraints. Our work com-            is that each layer roughly waits for the end of computations in the
+pletely removes the performance disparity between deep SNNs and              previous layer, but apart from that units and layers can function
+deep ANNs, outperforming all prior state-of-the-art research in training     asynchronously.
+networks with TTFS coding.                                                         To address the question of spike timing jitter, two different
+     TTFS coding in a feed-forward network is a high-level abstraction       dimensions of randomness need to be considered, which leads to four
+of some key aspects of signal transmission in the brain. In the cortex,      different cases. First, random jitter (i.e., a value different from trial to
+transient spiking activity initiated by short visual stimuli travels in a    trial) is distinct from frozen jitter (i.e., systematic shifts, potentially
+wave-like fashion along the visual processing pathway, with signiﬁcant       induced by hardware mismatch, that remain ﬁxed across many trials).
+delays between visual areas, but short response duration in each             Second, local jitter (different from neuron to neuron) has different
+area34,71,72. A large fraction of information about image identity is        effects than systematic time shifts for groups of neurons (e.g., a ﬁxed
+contained in the ﬁrst 50 ms after response onset in early71 as well as       delay in the response of a whole layer). Since frozen jitter is equivalent
+higher areas73–75. However, in a time window of 50 ms most neurons           to (random) rescaling of parameters, it can be to a large degree com-
+emit at most one or two spikes, and only a few neurons more than ﬁve         pensated by ﬁne-tuning with the hardware-in-the-loop using our
+spikes73,74. While state-of-the-art models use a rate code (averaged over    method. Random jitter is in general more difﬁcult to compensate than
+100 ms and several presentations of the same stimulus)72, classiﬁcation      frozen jitter. Nevertheless, for local random jitter, Fig. 5a shows that
+of image identity based solely on the relative timing of the ﬁrst spike of   ﬁne-tuning with our training method leads to a signiﬁcant improve-
+each neuron relative to response onset in a single trial is conceivable74    ment. We did not test random jitter that would affect a whole layer n
+and could be tested with the simultaneous recordings of hundreds of          with the same time shift (e.g., by randomly shifting the whole time
+                                                                                         ðnÞ     ðnÞ
+neurons75. In passing we note that information about stimulus identity       interval ½t min , t max Þ between one trial and the next). Such phase shifts
+is indeed decodable from spike-latency in the early stages of visual,        could potentially be addressed by a slight variation of the coding
+auditory, and tactile processing30,31,76. The relatively short activity      scheme where absolute spike times are replaced by relative spike times
+                                                                                                                    ðnÞ
+patterns observed during an activity wave72,74–76 arise because most         (measured, e.g., in relation to t max      ), but this has so far not been
+excitatory neurons are adaptive and their activities are counter-            explored.
+balanced by inhibition77. TTFS coding in our model can hence be seen               In the future, our theory could serve as a starting point to address
+as an abstraction of a regime, in which neurons underwent a strong           the training instabilities of fully asynchronous SNNs and to devise
+adaptation or were balanced by inhibition to the level that they emit at     hardware-friendly learning rules. The remaining limitations that need
+most a single spike.                                                         to be addressed for a wider ﬁeld of applications are generalizations of
+     Feed-forward networks may be considered an inaccurate                   our approach to skip-connections in ResNets, the inclusion of batch
+approximation of highly recurrent cortical networks. However, the            normalization for SNN training rather than fusing it into the weights,
+short presentation time in combination with the short reaction               and adaptations of TTFS networks to work with temporal data, such as
+times of typical visual experimental protocols for object                    videos. The latter is an important open question for the TTFS research
+recognition75 implies that the main ﬂow of signal processing is feed-        in general, which so far has been focusing on the ﬁrst spikes. However,
+forward33–35. Indeed, attentional feedback arrives typically with a          we can imagine that processing temporal streams requires several
+delay78. Therefore it is not surprising that, for object recognition         innovative steps, such as handling multiple waves of spiking activity,
+after short image presentation times, the best available models in           and going beyond feed-forward ReLU networks toward recurrent
+computational neuroscience are convolutional feed-forward                    networks. Overall, we envision that the most promising use case
+networks72,75. Our work shows that convolutional feed-forward                would involve a process where pre-trained state-of-the-art ReLU net-
+ReLU networks can alternatively be considered as TTFS networks.              works are converted into TTFS networks and deployed on devices
+Similar to biological spiking activity, we use a continuous-time             where they undergo continual online learning on the chip, ensuring
+representation where a spike can occur at any moment when the                energy-efﬁcient and low-latency inference.
+membrane potential reaches the threshold41,49,79,80. Our simulations
+are conducted with machine learning precision, similar to the ReLU           Methods
+network, setting the presented approach apart from discrete-time             SNN neuron dynamics
+SNNs where spikes occur at the ﬁrst time step after the threshold is         Without loss of generality, we assume the potential V iðnÞ to be unit-free
+reached.                                                                     and so are the parameters W ijðnÞ and AiðnÞ, BiðnÞ , whereas t and τc have
+     The high spiking sparsity and high performance of the SNNs              units of time. Rescaling time by t → (t/τc) would remove the units, but
+obtained through our training approach make them suitable for low-           we keep it in the equations to show the role of the conversion factor τc.
+power hardware implementations. Generally, no ﬁxed standard for              In biology, τc in sensory areas is in the range of a few milliseconds30,31,
+the neuromorphic design has emerged so far, but it is known that             whereas in hardware devices it could be in the range of microseconds
+TTFS networks can exploit the speed and energy-efﬁcient character-           or even shorter.
+istics of hardware operating in mixed analog-digital12 as well as digital
+domain39,81. Furthermore, inference in TTFS networks is closely rela-        Output layer
+ted to the operation of time-domain vector multiplication circuits and       The output layer N + 1 contains non-spiking read-out neurons. Each
+can potentially leverage these designs43. We envision that our result        neuron m simply integrates input spikes coming from layer N during
+will motivate the development of a new class of neuromorphic chips,          the time interval ½t ðNÞ        ðNÞ
+                                                                                                     min , t max Þ without ﬁring. Moreover, in this case,
+digital and analog, that would implement natively TTFS dynamics and          AðN
+                                                                               i
+                                                                                 + 1Þ
+                                                                                      is a trainable parameter                                           ðN + 1Þ
+                                                                                                                    initialized with 0. Integration of V m
+                                                                                               ðNÞ
+beneﬁt from our training approach—ideally through on-chip training           stops at time t max , and the softmax and the standard cross-entropy loss
+or hardware-in-the-loop training, or alternatively through off-chip          L are calculated using real-valued potentials, analogous to the real-
+ﬁne-tuning on accurate device models. With our method of training            valued activations of ANNs.
+and ﬁne-tuning SNNs, a potentially long classiﬁcation latency or
+sensitivity of model parameters to noise, which could negatively             Proof of the exact reverse mapping from TTFS network to ReLU
+impact the metrics on device, are effectively mitigated. Finally, even       network
+though the obtained SNN models enforce a certain level of synchro-           Proof. Starting from the SNN deﬁnition in Eq. (1), we compute analy-
+nicity, we do not believe that an implementation of TTFS network like        tically the spiking time t ðnÞ
+                                                                                                        i of neuron i in layer n. We consider the case
+
+
+
+Nature Communications | (2024)15:6793                                                                                                                         8
+Article                                                                                                                                         https://doi.org/10.1038/s41467-024-51110-5
+
+
+Ai = 0 for simplicity. We assume that the potential V ðnÞ
+                                                      i   reaches the                                      Exact reverse identity mapping
+threshold ϑðnÞ at time t ðnÞ in the time window ½t ðnÞ     ðnÞ                                             The condition BðnÞ
+                                                                                                                          i = 1 for all i and n (Fig. 1c), results in the identity
+           i              i                        min , t max Þ. The spiking
+           ðnÞ    ðnÞ ðnÞ                                                                                  mapping formula (see Eq. (2)):
+condition ϑi = V i ðt i Þ yields:
+
+                          X                                                                                                                                                        ðnÞ
+                                                                                                                                                                                     t max  t ðnÞ
+            τ c ϑiðnÞ =         W ðnÞ
+                                  ij 0
+                                         t ðnÞ     ðn1Þ
+                                           min  t j0      + BiðnÞ t iðnÞ  t ðnÞ
+                                                                              min ,                  ð5Þ              wijðnÞ = def W ijðnÞ      and
+                                                                                                                                                          ðnÞ
+                                                                                                                                                        bi = def  ϑiðnÞ +                     min
+                                                                                                                                                                                                   :                            ð9Þ
+                          j0
+                                                                                                                                                                                           τc
+
+where j0 iterates over all neurons in layer n − 1 which have generated a
+spike. For the spiking time t iðnÞ , we have:                                                              SNN and ReLU training trajectories (δwðnÞ
+                                                                                                                                                 ij )
+                                                                                                         We calculate the update in ReLU network parameter space δwðnÞ
+                                                                                                                                                                       ij as the
+                                                    X
+            BiðnÞ t iðnÞ = BðnÞ ðnÞ        ðnÞ
+                            i t min + τ c ϑi                 W ðnÞ
+                                                                ij 0
+                                                                           t ðnÞ     ðn1Þ
+                                                                             min  t j0          :   ð6Þ
+                                                                                                           difference between ReLU network weights obtained from (i) the
+                                                        j0                                                 reverse-mapped updated SNN, i.e., MðW ij ðnÞ  η dLðnÞ Þ and (ii) the
+                                                                                                                                                                                            dW ij
+
+We divide by the factor BðnÞ              ðnÞ                                                              reverse-mapped original SNN, i.e., MðW ij ðn Þ, where wðnÞ      ðnÞ
+                                                                                                                                                                  ij = MðW ij Þ.
+                         i and subtract t max on both sides of Eq. (6),
+which yields:                                                                                                  For small learning rate η, we can employ a ﬁrst-order approx-
+                                                                                                           imation   of    the   mapping     function  M     around    W ðnÞ
+                                                                                                                                                                         ij :
+                                                                                                                 ðnÞ                ðn
+                                                              X W ijðnÞ0  ðn1Þ                          MðW ij  η ðnÞ Þ≈MðW ij Þ  η ðnÞ ðnÞ , from which follows:
+                                                                                                                        dL                 dM dL
+                               ϑiðnÞ                                                                                       dW ij                          dW ij dW ij
+        t ðnÞ   ðnÞ
+          i  t max = τ c        ðnÞ
+                                         ðnÞ
+                                     + t min  t ðnÞ
+                                                 max +             ðnÞ
+                                                                          t j0    t ðnÞ
+                                                                                     min :           ð7Þ
+                               Bi                             j 0 Bi                                                                                                    "              #2
+                                                                                                                                              dM      dL                    dwðnÞ             dL
+                                                                                                                         δwðnÞ
+                                                                                                                                                                              ij
+                                                                                                                           ij ≈  η                          = η                                       ,                      ð10Þ
+                                                                                                                                                         ðnÞ
+                                                                                                                                             dW ijðnÞ dW ij                 dW ijðnÞ        dwijðnÞ
+Using Eq. (7), one can now prove by induction that Eq. (2) deﬁnes an
+equivalent ReLU network satisfying the identity x ðnÞ       ðnÞ     ðnÞ
+                                                     i = ðt max  t i Þ=τ c
+                                       ðnÞ                                                                                                                                                                            dwðnÞ
+for neurons that ﬁre a spike. We set x i = 0 for neurons that do not ﬁre                                   where the second equality comes from plugging in dMðnÞ =                                                     ij
+                                                                                                                                                                                                                               and
+                                                                                                                                                                                                dW ij                 dW ðnÞ
+a spike in the SNN and note that the rectiﬁed linear unit i is in its                                                    dwðnÞ
+                                                                                                                                                                                                                         ij
+                                                                                                            dL
+                                                                                                                  = dLðnÞ ijðnÞ . For the α1-model, the difference between the δwðnÞ
+operating regime x iðnÞ > 0 if and only if the corresponding spiking                                       dW ðnÞ
+                                                                                                              ij
+                                                                                                                   dw ij
+                                                                                                                         dW ij
+                                                                                                                                                                                 ij
+
+neuron i ﬁres before t ðnÞ
+                       max . □                                                                             and a direct ReLU-network update ΔwijðnÞ = η dLðnÞ cannot be corrected
+                                                                                                                                                                              dwij
+
+Adaptive t ðnÞ                                                                                             with a different learning rate η. This is due to the fact that the
+           max parameters
+ϑiðnÞ , t ðnÞ     ðnÞ
+          min , t max are initialized such that the neurons which are active in
+                                                                                                           multiplicative bias which appears in Eq. (10) changes for every neuron
+the equivalent ReLU network generate a spike in the interval                                                                                                       dwðnÞ                       BðnÞ W ðnÞ
+                                                                                                           pair (i, j) and algorithmic iteration, i.e.,              ij
+                                                                                                                                                                        ðnÞ   = dMðnÞα =        i      ij
+                                                                                                                                                                                                                  .
+½t ðnÞ      ðnÞ                                                           ðnÞ                                                                                                                                 2
+                                                                                                                                                                                                    ðBðnÞ
+   min , t max Þ. Details of the choice of the base threshold and t max are
+                                                                                                                                                                   dW ij         dW ij                    Þ
+                                                                                                                                                                                                      i
+
+given in Supplementary Note 2. During training, as we update the
+network parameters W ðnÞ                  ðnÞ                           ðnÞ
+                                 ij and Di , the hyperparameters like t max need                           Simulation details
+to be changed, so that the condition that the neurons which are active                                     Each simulation run was executed on one NVIDIA A100 GPU. In all
+in the equivalent ReLU network generate a spike in the interval                                            experiments, τc was set to 1U where U stands for the concrete unit such
+½t ðnÞ      ðnÞ
+   min , t max Þ remains true. We suggest a new adaptive update rule which                                 as ms or μs. Note that although the choice of units in simulations can be
+recalculates t ðnÞ                                   ðnÞ
+                      max such that all the spikes t i are moved away from the                             arbitrary, it becomes a critical parameter for a hardware imple-
+  ðnÞ
+t max boundary. Formally, when processing the training dataset, we                                         mentation. Moreover, hyperparameter γ = 10 ensures that even for
+update t ðnÞ    max as follows:                                                                            higher values of initial learning rate the neurons, which are active in the
+
+                                                        (                                                                                             
+                                                         γ t ðnÞ            ðnÞ
+                                                             max  mini,μ t i     t ðnÞ     ðnÞ
+                                                                                     max  t min ,
+                                                                                                                      ðnÞ
+                                                                                                                 if t max  t ðnÞ       ðnÞ            ðnÞ
+                                                                                                                              min < γ t max  mini,μ t i
+                                             Δt ðnÞ
+                                                max =                                                                                                                                                                           ð8Þ
+                                                                                         0,                                        otherwise
+
+
+
+
+The minimum operator iterates over all neurons i and input samples μ                                       equivalent ReLU network, generate a spike in the interval ½t ðnÞ         ðnÞ
+                                                                                                                                                                            min , t max Þ.
+in the batch and γ is a constant. After this update, we change the                                         The simulation results were averaged across 16 trials. The batch size
+subsequent time window accordingly so that t ðn          + 1Þ  ðnÞ
+                                                       min = t max   , and we                              was set to 8. In all cases, we used the Adam optimizer where for the
+iterate over all layers sequentially. The base threshold ϑ      ~ðnÞ is then                               initial learning rate “lr0” and iteration “it” an exponential learning
+                                                                   i                                                                                                it
+updated accordingly, see Supplementary Note 2. For simplicity, in the                                      schedule was adopted following the formula: lr0 * 0:95000 . If not stated
+theory section, we consider that this update has reached an equili-                                        otherwise the initial learning rate was set to 0.0005.
+brium, so we consider that t ðnÞ
+                             max , t
+                                     ðnÞ       ~ðnÞ are constants w.r.t. the
+                                         , and ϑ                                                                 The data preprocessing included normalizing pixel values to the
+                                                 min               i
+                                                                                                           [0, 1] range and, in the case of a fully connected network, the input was
+SNN parameters, the condition t ðn + 1Þ ðnÞ
+                                min = t max is always satisﬁed and all                                     also reshaped to a single dimension. For MNIST, fMNIST, CIFAR10, and
+the spikes of layer n arrive within ½t ðnÞ     ðnÞ
+                                       min , t max Þ.                                                      CIFAR100 the training was performed on the training data, whereas the
+                                                                                                           evaluation was performed on the test data. For PLACES365 the ﬁne-
+Calculating the SNN Jacobian                                                                               tuning was performed on 1% random sample of the training data and
+                                                        ðnÞ
+In order to obtain the values of the dtdtðn1Þ matrix, we take the derivative                              the evaluation was performed on the validation data (since the labels
+                                       ðnÞ
+of Eq. (7), which yields dtdtðn1Þ = M ðn1Þ  B1ðnÞ  W ðnÞ where M(n−1) is a diagonal                    for test data are not publicly available).
+                                                                                                                 In fully connected architectures all hidden layers contain 340
+matrix with elements M ijðn1Þ = δ ij Hðt ðn1Þ   ðn1Þ
+                                          max  t i     Þ containing one for all
+                                                                                                           neurons. The LeNet5 contains three convolutional, two max pooling,
+neurons j 0 which generate a spike.                                                                        and two fully connected layers with 84 and 10 neurons, respectively.
+
+
+
+Nature Communications | (2024)15:6793                                                                                                                                                                                            9
+Article                                                                                                                           https://doi.org/10.1038/s41467-024-51110-5
+
+
+Moreover, some of the datasets utilize a slightly modiﬁed version of                            reduction of capacity energy for non-spiking versus spiking is in the
+VGG16. The kernel was always of size 3 and the input of each con-                               range of 10–20%. In general, the spike transmission cost Tr increases
+volutional operation was zero padded to ensure the same shape at the                            signiﬁcantly as the network scales to a larger number of neurons28,
+output. For MNIST dataset, due to a small image size, the ﬁrst max                              therefore, we expect the energy terms to be related as
+pooling layer in VGG16 was omitted. In this case, there are two fully                           Tr ≫ 0.5θ2C > 0.5rθ2C. Hence we expect spiking sparsity to signiﬁcantly
+connected hidden layers containing 512 neurons each. For CIFAR10                                reduce transmission costs and only marginally reduce charging costs.
+and CIFAR100 the convolutional layers are followed by only one fully                                 Let us give two concrete examples. First, in a widely recognized
+connected hidden layer containing 512 neurons, yielding 15 layers in                            neuromorphic hardware, the energy consumed by the chip increases
+total. Finally, for PLACES365, there are two fully connected hidden                             by 45pJ per each additional spike processed82. Second, our TTFS net-
+layers with 4096 neurons each. The spiking implementation of max                                work and training with hardware-in-the-loop could alternatively be
+pooling operation was done as in ref. 41.                                                       implemented similarly to conceptually related circuit designs for
+                                                                                                vector-by-matrix multipliers in the time domain with an estimate of 150
+Simulations details for demonstrating TTFS and ReLU networks                                    TOps/J for 6-bit precision43.
+training trajectories
+In Fig. 3, we illustrated that training α1-model with smart α1 initializa-                      Simulation details for ﬁne-tuning for hardware
+tion is difﬁcult. For the optimization process, we used plain stochastic                         We implement independently four types of hardware constraints: (i)
+gradient descent (SGD) without a learning schedule and batch size 16.                            spiking time jitter, (ii) reduced number of time steps per layer, (iii)
+In Fig. 3a, the B1-model was trained with a learning rate equal to                               reduced number of weight bits, and (iv) latency limitations. In practice,
+0.0005, which is the same as in the corresponding ReLU network. For                              these constraints often coexist, but this is not considered here.
+α1-model with smart α1 initialization the learning process with the                              (i) Spiking time jitter (Fig. 5a): a random value of a Gaussian noise of a
+same learning rate struggles to surpass a training accuracy of around                                 given standard deviation is added to each spiking time of the
+20%, conﬁrming the presence of gradient instabilities. In this case, we                               TTFS-network inputs and the outputs of each layer.
+found that decreasing to a very small learning rate of 0.00003 allowed                          (ii) Time quantization (Fig. 5b): in digital hardware, the spike times of
+to train the network. However, training is then substantially slower                                  the network are subjected to quantization leading to discrete time
+compared with both ReLU network and B1-model. In Fig. 3b, the goal is                                 steps. To mitigate the impact of the spike time outliers, the size of
+                                                                                                             ðnÞ     ðnÞ
+to understand how much the SNN weights diverge from the ReLU                                          the ½t min , t max Þ interval is chosen to contain 99% of the activation
+weights during training. In order to enable a fair comparison in this                                 function outputs in layer n when training data are sent to the input
+case, all three networks were trained with an initial learning rate equal                             of the ReLU network. The result is that some neurons in layer n
+to 0.00003.                                                                                           can ﬁre a spike too early, i.e., before t ðnÞ     min . In our software imple-
+                                                                                                      mentation, the input of such early spiking times is treated as if the
+                                                                                                                                    ðnÞ
+Simulations details for large benchmarks                                                              spike had occurred at t min       . The initial interval ½t ðnÞ       ðnÞ
+                                                                                                                                                                    min , t max Þ is divided
+Training our SNNs from scratch is possible for CIFAR10 to 100%                                        into quantized steps, which are ﬁxed during the ﬁne-tuning. In
+                                                                                                                                                                                       ðnÞ
+accuracy on the training data indicating that gradient descent works                                  other words, in this case, the adaptive rule which changes t max                     is
+well even for larger scale datasets and architectures. Some of the pre-                               not applied.
+trained ReLU models we used have batch normalization layers67 that                             (iii) Weight quantization (Fig. 5c): to reduce the size of the storage
+greatly facilitate generalization of deep architectures on large datasets,                            memory, we apply quantization-aware training such that at the
+and which are not present in our SNN model during training. Instead,                                  inference time the weights are represented with a smaller number
+the exact mapping fuses them with the neighboring fully connected                                     of bits. Similarly, as for the spiking time, we remove outliers
+and convolutional layer similar as in ref. 41, after which the ﬁne-tuning                             before the quantization. In this case, we remove a predeﬁned
+is conducted for 10 epochs. Since the models are already pretrained,                                  percentile as follows on both sides of the distribution. In case of a
+the ﬁne-tuning is done with a reduced initial learning rate of 10−6 for                               larger number of bits, only the ﬁrst and last percentile were
+CIFAR10 and CIFAR100, and 10−7 for PLACES365. Importantly, the                                        removed. However, in the case of a 4-bit representation, we
+simulations show that the SNN ﬁne-tuning yields zero performance                                      reduce the interval further by removing the ﬁrst four and last four
+loss compared to the corresponding ReLU network.                                                      percentiles. As before, the obtained range is divided into
+                                                                                                      quantized steps, which are then ﬁxed during the ﬁne-tuning. At
+Estimation of the dominant factor of energy consumption of                                            the inference time, the quantized steps are scaled to the integer
+neuromorphic hardware                                                                                 values on [−2q−1, 2q−1 − 1] range (where q is the number of bits),
+If we assume that the neurons are implemented with capacitors of                                      whereas the other parameters are adjusted accordingly.
+capacitance C, which are being charged as the input spikes arrive, then                        (iv) Reduced latency (Fig. 5d): the robustness to a reduced classiﬁca-
+                                                                                                                                                              ðnÞ
+the dominant energy for processing a data point can be estimated as                                   tion latency is tested by picking smaller ½t min            , t ðnÞ
+                                                                                                                                                                      max Þ intervals. We
+P                     ðnÞ 2        P          ðnÞ ðnÞ         2                                                                                                                 ðnÞ
+    i0 ,n ðT r + 0:5ðϑi0 Þ CÞ + 0:5 i00 ,n ðV i00 ðt max ÞÞ C. Here the transmission                  emphasize that the adaptive rule which changes t max                            is not
+cost per spike is denoted by Tr, whereas the other two terms describe                                 applied here, i.e., the interval is ﬁxed during ﬁne-tuning. We note
+the charging cost of the capacitor. The index i0 runs over all neurons                                that with a reduced interval, it may happen that a neuron j in layer
+which ﬁre a spike. For these neurons we add the transmission cost to                                  n − 1 ﬁres before t ðn1Þ
+                                                                                                                              min . If so, the step current input that it causes in
+the charging energy, calculated simply using the threshold value ϑðnÞ                   i0
+                                                                                           .          layer n is, in our implementation, only taken into account for
+Analogously, for all neurons that do not spike (index i00 ) the charging                              t > t ðn1Þ
+                                                                                                            min , see Eq. (1), even though the neuron has ﬁred at
+energy is calculated using the value of the potential V iðnÞ             00 at time instant
+  ðnÞ                                                                                                 t ðn1Þ < t ðn1Þ
+                                                                                                                  min . In other words, the spike is sent immediately to the
+t max   , which is smaller than the threshold ϑðnÞ        i 00 . Therefore, when a neuron
+                                                                                                        j
+
+spikes it contributes a larger share to the energy consumption than                                   next layer, where it triggers the step current input, but the input is
+                                                                                                                           ðn1Þ
+when it stays silent. To estimate the average capacitor energy per                                    blocked until time t min   . This implementation enables us to
+                                                        P           2
+neuron we use the deﬁnition θ2 = ð1=NÞ i ðϑðnÞ                   i Þ where the sum runs
+                                                                                                      consider overlapping spiking phases across subsequent layers.
+over all neurons in all layers. To ﬁnd out how much the charging cost is
+reduced if a neuron does not spike we calculate the relative fraction                                To quantify, how much we can make the spiking phases in layer
+                                            2        ðnÞ 2
+r = (1/N)∑ri where r i = hðV iðnÞ ðt ðnÞ
+                                     max ÞÞ i=ðϑi Þ . On CIFAR10 and CIFAR100,                  n − 1 and n overlap, we studied the mapping to the corresponding
+we ﬁnd values in the range 0.8 < r < 0.85 which suggest that the relative                       ReLU network and exploited that early ﬁring times in the SNN
+
+
+Nature Communications | (2024)15:6793                                                                                                                                                    10
+Article                                                                                                      https://doi.org/10.1038/s41467-024-51110-5
+
+
+correspond to ReLU units with high activity. In each layer n, the                 14. Davies, M. et al. Advancing neuromorphic computing with Loihi: a
+            ðnÞ     ðnÞ
+reduced ½t min  , t max Þ interval of the SNN is chosen such that it comprises        survey of results and outlook. Proc. IEEE, Vol. 109, 911–934
+in the corresponding ReLU network a desired percentage of activation                  (IEEE, 2021).
+values when training data are used as input. The chosen values of                 15. Diehl, P. U., Zarrella, G., Cassidy, A., Pedroni, B. U. & Neftci, E.
+percentiles are 100, 99, 95, 92, and 90. For example, with the 95 per-                Conversion of artiﬁcial recurrent neural networks to spiking neural
+centile, in the SNN ﬁve percent of ﬁring times occur with an early                    networks for low-power neuromorphic hardware. In Proc. ICRC
+timing t ðnÞ     ðnÞ
+          j < t min . Later ﬁne-tuning with our training algorithm may                (IEEE, 2016).
+partially reduce this fraction and partially account for the mismatch             16. Masquelier, T. & Thorpe, S. J. Unsupervised learning of visual fea-
+due to overlapping spike phases by adapting network weights. As an                    tures through spike timing dependent plasticity. PLoS Comput. Biol.
+aside, we note that the fact that the step current caused by early spike              3, e31 (2007).
+                                                  ðnÞ
+arrivals is taken only into account for t > t min     can be interpreted in the   17. Kheradpisheh, S. R., Ganjtabesh, M., Thorpe, S. J. & Masquelier, T.
+corresponding ReLU network as a clipping of the activity of ReLUs at a                STDP-based spiking deep convolutional neural networks for object
+maximum value.                                                                        recognition. Neural Netw. 99, 56–67 (2018).
+                                                                                  18. Goodfellow, I., Bengio, Y., Courville, A. & Bengio, Y. Deep Learning
+Reporting summary                                                                     (MIT Press, Cambridge, MA, 2016).
+Further information on research design is available in the Nature                 19. Neftci, E. O., Mostafa, H. & Zenke, F. Surrogate gradient learning in
+Portfolio Reporting Summary linked to this article.                                   spiking neural networks: bringing the power of gradient-based
+                                                                                      optimization to spiking neural networks. IEEE Signal Processing
+Data availability                                                                     Magazine Vol. 36, 51–63 (IEEE, 2019).
+The datasets utilized during the current study are publicly available.            20. Bellec, G., Salaj, D., Subramoney, A., Legenstein, R. & Maass, W.
+MNIST, Fashion-MNIST, and CIFAR10/100 datasets were obtained                          Long short-term memory and learning-to-learn in networks of
+using TensorFlow’s tf.keras.datasets. < name > .load_data function, and               spiking neurons. In Proc. Advances in Neural Information Processing
+PLACES365 dataset was obtained using tfds.load function.                              Systems Vol. 31 (Curran Associates, Inc., 2018).
+                                                                                  21. Zenke, F. & Ganguli, S. Superspike: Supervised learning in multi-
+Code availability                                                                     layer spiking neural networks. Neural Comput. 30, 1514–1541 (2018).
+The source code is available at https://github.com/IBM/equivalent-                22. Woźniak, S., Pantazi, A., Bohnstingl, T. & Eleftheriou, E. Deep
+training-ReLUnetwork-SNN83.                                                           learning incorporating biologically inspired neural dynamics and in-
+                                                                                      memory computing. Nat. Mach. Intell. 2, 325–336 (2020).
+References                                                                        23. Huh, D. & Sejnowski, T. J. Gradient descent for spiking neural net-
+1.  Brown, T. et al. Language models are few-shot learners. In Proc.                  works. In Proc. Advances in Neural Information Processing Systems
+    Advances in Neural Information Processing Systems Vol. 33,                        Vol. 31 (Curran Associates, Inc., 2018).
+    1877–1901 (Curran Associates, Inc., 2020).                                    24. Schmitt, S. et al. Neuromorphic hardware in the loop: training a
+2. Jaegle, A. et al. Perceiver: general perception with iterative atten-              deep spiking network on the brainscales wafer-scale system. In
+    tion. In Proc. International Conference on Machine Learning,                      Proc. IJCNN, 2227–2234 (IEEE, 2017).
+    4651–4664 (PMLR, 2021).                                                       25. Gardner, B., Sporea, I. & Grüning, A. Learning spatiotemporally
+3. Yu, G. et al. Accurate recognition of colorectal cancer with semi-                 encoded pattern transformations in structured spiking neural net-
+    supervised deep learning on pathological images. Nat. Commun.                     works. Neural Comput. 27, 2548–2586 (2015).
+    12, 6311 (2021).                                                              26. Stanojevic, A., Cherubini, G., Woźniak, S. & Eleftheriou, E. Time-
+4. Strubell, E., Ganesh, A. & McCallum, A. Energy and policy con-                     encoded multiplication-free spiking neural networks: applica-
+    siderations for modern deep learning research. In Proc. AAAI, Vol.                tion to data classiﬁcation tasks. Neural Comput. Appl. 35,
+    34, 13693–13696 (AAAI, 2020).                                                     7017–7033 (2023).
+5. Patterson, D. et al. The carbon footprint of machine learning training         27. Han, S., Mao, H. & Dally, W. J. Deep compression: compressing
+    will plateau, then shrink. Computer 55, 18–28 (2022).                             deep neural networks with pruning, trained quantization and Huff-
+6. Wu, C.-J. et al. Sustainable AI: environmental implications, chal-                 man coding. In Proc. ICLR (ICLR, 2016).
+    lenges and opportunities. In Proc. Machine Learning and Systems               28. Sacco, E. et al. A 5Gb/s 7.1fJ/b/mm 8× multi-drop on-chip 10mm
+    Vol. 4, 795–813 (mlsys.org, 2022).                                                data link in 14nm FinFET CMOS SOI at 0.5V. In 2017 Symposium on
+7. Wang, X. et al. Convergence of edge computing and deep learning:                   VLSI Circuits C54–C55 (IEEE, 2017).
+    a comprehensive survey. IEEE Communications Surveys & Tutorials               29. Hubel, D. H. & Wiesel, T. N. Receptive ﬁelds of single neurones in the
+    Vol. 22, 869–904 (IEEE, 2020).                                                    cat’s striate cortex. J. Physiol. 148, 574 (1959).
+8. Boroumand, A. et al. Google neural network models for edge                     30. Gollisch, T. & Meister, M. Rapid neural coding in the retina with
+    devices: analyzing and mitigating machine learning inference bot-                 relative spike latencies. Science 319, 1108–1111 (2008).
+    tlenecks. In 2021 30th International Conference on Parallel Archi-            31. Johansson, R. S. & Birznieks, I. First spikes in ensembles of human
+    tectures and Compilation Techniques (PACT) 159–172 (IEEE, 2021).                  tactile afferents code complex spatial ﬁngertip events. Nat. Neu-
+9. Jiang, Z., Chen, T. & Li, M. Efﬁcient deep learning inference on edge              rosci. 7, 170–177 (2004).
+    devices. ACM SysML https://mlsys.org/Conferences/2018/ (Stan-                 32. Carr, C. E. Processing of temporal information in the brain. Annu.
+    ford, CA, 2018).                                                                  Rev. Neurosci. 16, 223–43 (1993).
+10. Burr, G. W. et al. Neuromorphic computing using non-volatile                  33. Thorpe, S. & Imbert, M. Biological constraints on connectionist
+    memory. Adv. Phys. X 2, 89–124 (2017).                                            modelling. In Connectionism in Perspective (eds Pfeifer, R., Schrete,
+11. Sebastian, A. et al. Tutorial: brain-inspired computing using phase-              Z., Fogelman-Souli, F. & Steels, L.) (Elsevier, Amsterdam, 1989).
+    change memory devices. J. Appl. Phys. 124, 111101 (2018).                     34. Thorpe, S., Fize, D. & Marlot, C. Speed of processing in the human
+12. Göltz, J. et al. Fast and energy-efﬁcient neuromorphic deep learn-                visual system. Nature 381, 520–522 (1996).
+    ing with ﬁrst-spike times. Nat. Mach. Intell. 3, 823–835 (2021).              35. Thorpe, S., Delorme, A. & Van Rullen, R. Spike-based strategies for
+13. Gallego, G. et al. Event-based vision: a survey. IEEE Transactions on             rapid processing. Neural Netw. 14, 715–725 (2001).
+    Pattern Analysis and Machine Intelligence Vol. 44, 154–180                    36. Maass, W. Fast sigmoidal networks via spiking neurons. Neural
+    (IEEE, 2020).                                                                     Comput. 9, 279–304 (1997).
+
+
+Nature Communications | (2024)15:6793                                                                                                                    11
+Article                                                                                                  https://doi.org/10.1038/s41467-024-51110-5
+
+
+37. Gerstner, W. Spiking neurons. In Pulsed Neural Networks (eds             59. Bengio, Y., Simard, P. & Frasconi, P. Learning long-term depen-
+    Maass, W. & Bishop, C. M.) Ch. 1, 3–53 (MIT-Press, 1998).                    dencies with gradient descent is difﬁcult. IEEE Transactions on
+38. Maass, W. Computing with spiking neurons. In Pulsed Neural                   Neural Networks Vol. 5, 157–166 (IEEE, 1994).
+    Networks (eds Maass, W. & Bishop, C.) Ch. 2, 55–85 (MIT-Press,           60. Hochreiter, S., Bengion, Y., Frasconi, P. & Schmidhuber, J. Gradient
+    1998).                                                                       ﬂow in recurrent nets: the difﬁculty of learning long-term depen-
+39. Rueckauer, B. & Liu, S.-C. Conversion of analog to spiking neural            dencies. In A Field Guide to Dynamical Recurrent Neural Networks
+    networks using sparse temporal coding. In Proc. ISCAS (IEEE, 2018).          (eds Kremer, S. & Kolen, J.) (IEEE Press, 2001).
+40. Zhang, M. et al. Rectiﬁed linear postsynaptic potential function for     61. Sussillo, D. & Abbott, L. F. Random walk initialization for training
+    backpropagation in deep spiking neural networks. IEEE Transac-               very deep feedforward networks. Preprint at https://doi.org/10.
+    tions on Neural Networks and Learning Systems Vol. 33, 1947–1958             48550/arXiv.1412.6558 (2014).
+    (IEEE, 2021).                                                            62. He, K., Zhang, X., Ren, S. & Sun, J. Delving deep into rectiﬁers:
+41. Stanojevic, A. et al. An exact mapping from ReLU networks to                 surpassing human-level performance on ImageNet classiﬁcation. In
+    spiking neural networks. Neural Netw. 168, 74–88 (2023).                     Proc. of the IEEE International Conference on Computer Vision
+42. Bavandpour, M., Mahmoodi, M. R. & Strukov, D. B. Energy-efﬁcient             1026–1034 (IEEE, 2015).
+    time-domain vector-by-matrix multiplier for neurocomputing and           63. Surace, S., Pﬁster, J.-P., Gerstner, W. & Brea, J. On the choice of
+    beyond. Preprint at http://arxiv.org/abs/1711.10673 (2017).                  metric in gradient-based theories of brain function. PLoS Comput.
+43. Bavandpour, M., Mahmoodi, M. R. & Strukov, D. B. Energy-efﬁcient             Biol. 16, e1007640 (2020).
+    time-domain vector-by-matrix multiplier for neurocomputing and           64. Krizhevsky, A. Learning Multiple Layers of Features from Tiny Images
+    beyond. IEEE Transactions on Circuits and Systems II: Express Briefs         (University of Toronto, Canada, 2009).
+    Vol. 66, 1512–1516 (IEEE, 2019).                                         65. Zhou, B., Lapedriza, A., Khosla, A., Oliva, A. & Torralba, A. Places: a
+44. Liu, C. et al. Memory-efﬁcient deep learning on a SpiNNaker 2                10 million image database for scene recognition. IEEE Transactions
+    prototype. Front. Neurosci. 12, 840 (2018).                                  on Pattern Analysis and Machine Intelligence Vol. 40, 1452–1464
+45. Courbariaux, M., Bengio, Y. & David, J.-P. Binaryconnect: training           (IEEE, 2017).
+    deep neural networks with binary weights during propagations. In         66. Yang, K., Yau, J. H., Fei-Fei, L., Deng, J. & Russakovsky, O. A study of
+    Proc. Advances in Neural Information Processing Systems Vol. 28              face obfuscation in ImageNet. In Proc. International Conference on
+    (Curran Associates, Inc., 2015).                                             Machine Learning, Vol. 162, 25313–25330 (PMLR, 2022).
+46. Wunderlich, T. et al. Demonstrating advantages of neuromorphic           67. Geifman, Y. Github (2018). https://github.com/geifmany/cifar-vgg
+    computation: a pilot study. Front. Neurosci. 13, 260 (2019).             68. Klachko, M., Mahmoodi, M. R. & Strukov, D. Improving noise toler-
+47. Bohte, S. M., Kok, J. N. & La Poutre, H. Error-backpropagation in            ance of mixed-signal neural networks. In 2019 International Joint
+    temporally encoded networks of spiking neurons. Neurocomputing               Conference on Neural Networks (IJCNN) 1–8 (IEEE, Budapest, Hun-
+    48, 17–37 (2002).                                                            gary, 2019).
+48. Wunderlich, T. C. & Pehle, C. Event-based backpropagation can            69. Keller, B. et al. A 95.6-TOPS/W deep learning inference accelerator
+    compute exact gradients for spiking neural networks. Sci. Rep. 11,           with per-vector scaled 4-bit quantization in 5 nm. IEEE Journal of
+    12829 (2021).                                                                Solid-State Circuits Vol. 58, 1129–1141 (IEEE, 2023).
+49. Mostafa, H. Supervised learning based on temporal coding in              70. Huang, Y., Zhang, H., Shi, Y., Kolter, J. Z. & Anandkumar, A. Training
+    spiking neural networks. IEEE Transactions on Neural Networks and            certiﬁably robust neural networks with efﬁcient local Lipschitz
+    Learning Systems Vol. 29, 3227–3235 (IEEE, 2018).                            bounds. In Proc. Advances in Neural Information Processing Sys-
+50. Comsa, I. M. et al. Temporal coding in spiking neural networks with          tems Vol. 34 (eds Ranzato, M., Beygelzimer, A., Dauphin, Y., Liang, P.
+    alpha synaptic function. In Proc. ICASSP, 8529–8533 (IEEE, 2020).            S. & Vaughan, J. W.) 22745–22757 (Curran Associates, Inc., 2021).
+51. Stanojevic, A. et al. Approximating ReLU networks by single-spike        71. Richmond, B. J., Optican, L. M. & Spitzer, H. Temporal encoding of
+    computation. In Proc. ICIP, 1901–1905 (IEEE, 2022).                          two-dimensional patterns by single units in primate primary visual
+52. Park, S. & Yoon, S. Training energy-efﬁcient deep spiking neural             cortex. I. Stimulus-response relations. J. Neurosci. 64,
+    networks with time-to-ﬁrst-spike coding. Preprint at https://doi.org/        351–369 (1990).
+    10.48550/arXiv.2106.02568 (2021).                                        72. Yamins, D. & DiCarlo, J. Using goal-driven deep learning models to
+53. Zhou, S., Li, X., Chen, Y., Chandrasekaran, S. T. & Sanyal, A.               understand sensory cortex. Nat. Neurosci. 19, 356–365 (2016).
+    Temporal-coded deep spiking neural network with easy training            73. Woloszyn, L. & Sheinberg, D. Effects of long-term visual experience
+    and robust performance. In Proc. AAAI, Vol. 35, 11143–11151                  on responses of distinct classes of single units in inferior temporal
+    (AAAI, 2021).                                                                cortex. Neuron 74, 193–205 (2012).
+54. Rueckauer, B., Lungu, I.-A., Hu, Y., Pfeiffer, M. & Liu, S.-C. Conver-   74. DiCarlo, J., Zoccolan, D. & Rust, N. How does the brain solve visual
+    sion of continuous-valued deep networks to efﬁcient event-driven             object recognition? Neuron 73, 415–434 (2012).
+    networks for image classiﬁcation. Front. Neurosci. 11, 682 (2017).       75. Yamins, D., Cadieu, C., Solomon, E., Seibert, D. & DiCarlo, J.
+55. Hu, Y., Tang, H. & Pan, G. Spiking deep residual networks. IEEE              Performance-optimized hierarchical models predict neural
+    Transactions on Neural Networks and Learning Systems Vol. 34,                responses in higher visual cortex. Proc. Natl Acad. Sci. USA 111,
+    5200–5205 (IEEE, 2023).                                                      8619–8624 (2014).
+56. Maass, W. On the computational complexity of networks of spiking         76. Luczak, A., McNaughton, B. & Harris, K. Packet-based communica-
+    neurons. In Proc. Advances in Neural Information Processing Sys-             tion in the cortex. Nat. Rev. Neurosci. 16, 745–755 (2015).
+    tems (NIPS 1994) Vol. 7 (eds G. Tesauro, D. T. & Leen, T.) 183–190       77. Vogels, T. P. & Abbott, L. Gating multiple signals through detailed
+    (MIT-Press, 1995).                                                           balance of excitation and inhibition in spiking networks. Nat. Neu-
+57. Stockl, C. & Maass, W. Optimized spiking neurons can classify                rosci. 12, 438–491 (2009).
+    images with high accuracy through temporal coding with two               78. Lamme, V. & Roelfsema, P. The distinct modes of vision offered by
+    spikes. Nat. Mach. Intell. 3, 230–238 (2021).                                feedforward and recurrent processing. Trends Neurosci. 23,
+58. Bu, T. et al. Optimal ANN-SNN conversion for high-accuracy and               571–579 (2000).
+    ultra-low-latency spiking neural networks. In Proc. ICLR                 79. Gewaltig, M.-O. & Diesmann, M. Nest (neural simulation tool).
+    (ICLR, 2022).                                                                Scholarpedia 2, 1430 (2007).
+
+
+
+Nature Communications | (2024)15:6793                                                                                                                 12
+Article                                                                                               https://doi.org/10.1038/s41467-024-51110-5
+
+
+80. Gerstner, W. & Kistler, W. K. Spiking Neuron Models: Single Neurons,   Correspondence and requests for materials should be addressed to
+    Populations, Plasticity (Cambridge University Press, Cambridge         Stanisław Woźniak.
+    UK, 2002).
+81. Widmer, S. et al. Design of time-encoded spiking neural networks in    Peer review information Nature Communications thanks Christian
+    7nm CMOS technology. IEEE Transactions on Circuits and Systems         Pehle, and the other, anonymous, reviewer(s) for their contribution to the
+    II: Express Briefs Vol. 70, 3639–3643 (IEEE, 2023).                    peer review of this work. A peer review ﬁle is available.
+82. Merolla, P. et al. A digital neurosynaptic core using embedded
+    crossbar memory with 45pJ per spike in 45nm. In Proc. Custom           Reprints and permissions information is available at
+    Integrated Circuits Conference (CICC) (IEEE, 2011).                    http://www.nature.com/reprints
+83. Stanojevic, A. et al. High-performance deep spiking neural net-
+    works with 0.3 spikes per neuron. Zenodo https://doi.org/10.5281/      Publisher’s note Springer Nature remains neutral with regard to jur-
+    zenodo.12812581 (2024).                                                isdictional claims in published maps and institutional afﬁliations.
+
+Acknowledgements                                                           Open Access This article is licensed under a Creative Commons
+The research of W.G. and G.B. was supported by a Sinergia Grant (No.       Attribution 4.0 International License, which permits use, sharing,
+CRSII5 198612) of the Swiss National Science Foundation. We would like     adaptation, distribution and reproduction in any medium or format, as
+to thank our colleagues from the IBM Emerging Computing & Circuits         long as you give appropriate credit to the original author(s) and the
+team for the discussions.                                                  source, provide a link to the Creative Commons licence, and indicate if
+                                                                           changes were made. The images or other third party material in this
+Author contributions                                                       article are included in the article’s Creative Commons licence, unless
+A.S., W.G., S.W., G.B., G.C., and A.P. contributed conceptually. W.G.      indicated otherwise in a credit line to the material. If material is not
+conceived the idea. A.S., G.B., and S.W. developed the theory. A.S.        included in the article’s Creative Commons licence and your intended
+designed and performed the simulations with the support from S.W. and      use is not permitted by statutory regulation or exceeds the permitted
+G.B. The manuscript was written by A.S., G.B., W.G., and S.W. with input   use, you will need to obtain permission directly from the copyright
+from G.C. and A.P.                                                         holder. To view a copy of this licence, visit http://creativecommons.org/
+                                                                           licenses/by/4.0/.
+Competing interests
+The authors declare no competing interests.                                © The Author(s) 2024
+
+Additional information
+Supplementary information The online version contains
+supplementary material available at
+https://doi.org/10.1038/s41467-024-51110-5.
+
+
+
+
+Nature Communications | (2024)15:6793                                                                                                             13
+

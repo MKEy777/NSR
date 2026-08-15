@@ -1,0 +1,632 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage{siunitx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{hyperref}
+\usepackage{setspace} % 用于调整行距
+
+\usepackage[a4paper,margin=1in]{geometry}
+
+% Supplementary figure/table numbering
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\theequation}{S\arabic{equation}}
+
+\title{\textbf{Supplementary Information}\\
+for\\
+\textit{An Asynchronous Neuromorphic Architecture for Wearable EEG Emotion Recognition}}
+
+\author{
+Jingxin Liu$^{1,\dagger}$,
+Yiming Zhang$^{2,\dagger}$,
+Zikai Song$^{1}$,\\
+Zixuan Lai$^{2}$,
+Junyi Liu$^{1}$,
+Fuze Tian$^{3}$,
+Koo Hyoung Lee$^{4}$,\\
+Qunxi Dong$^{1,*}$,
+Lixian Zhu$^{1,*}$,
+Bin Hu$^{1,*}$
+}
+
+\date{}
+
+\begin{document}
+
+\onehalfspacing % 设置 1.5 倍行距
+
+\maketitle
+
+\begin{center}
+
+$^{1}$Key Laboratory of Brain Health Intelligent Evaluation and Intervention (Ministry of Education),\\
+School of Medical Technology, Beijing Institute of Technology, Beijing 100081, China
+
+\vspace{4pt}
+
+$^{2}$Key Laboratory of Brain Health Intelligent Evaluation and Intervention (Ministry of Education),\\
+Beijing Institute of Technology, Zhuhai 519088, China
+
+\vspace{4pt}
+
+$^{3}$School of Information Science and Engineering, Lanzhou University, Lanzhou 730000, China
+
+\vspace{4pt}
+
+$^{4}$NeuroSky, Inc., San Jose, CA 95112, USA
+
+
+\vspace{8pt}
+
+$\dagger$ These authors contributed equally to this work.
+
+\vspace{4pt}
+
+$^{*}$ Corresponding authors: {dongqx}@bit.edu.cn
+{zhulx}@bit.edu.cn
+{bh}@bit.edu.cn
+\vspace{4pt}
+
+This work was supported by the National Natural Science Foundation of China (No. 62227807).
+
+\end{center}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+%--------------------------------
+\section{Supplementary Methods}\label{sec:supp_methods}
+
+\subsection{Dataset Description}\label{supp:dataset}
+
+To evaluate the framework against prior studies, we tested it on five standard EEG datasets for emotion recognition: SEED \cite{ref65}, SEED-IV \cite{ref48}, SEED-V \cite{ref49}, DEAP \cite{ref50}, and DREAMER \cite{ref51}.
+
+The SEED series from the BCMI laboratory at Shanghai Jiao Tong University allows performance assessment under different label granularities. We used the 62-channel EEG recordings collected during emotion elicitation via film clips. The SEED dataset includes 15 subjects across three sessions and assigns three labels: positive, neutral, and negative. SEED-IV follows an identical protocol of 15 subjects and three sessions but uses four labels (happy, sad, fear, and neutral) across 24 trials per session. SEED-V scales the experiment to 20 subjects and three sessions with 15 trials per session, using five labels: happy, sad, fear, disgust, and neutral.
+
+The DEAP dataset comprises 32 subjects who watched 40 emotion-eliciting music videos. Ratings were reported using the Self-Assessment Manikin on a scale from 1 to 9. The EEG signals were recorded across 32 channels at 512~Hz and subsequently downsampled to 128~Hz. The DREAMER dataset includes 23 subjects and records 14 channels of EEG at 128~Hz via a wearable device. Subjects watched 18 video clips and provided ratings on a scale from 1 to 5. For both datasets, we defined a four-class classification task by combining high and low valence with high and low arousal. Continuous ratings were discretized using a threshold at the midpoint of the rating scale.
+
+\subsection{EEG Data Preprocessing}\label{supp:preprocessing}
+\begin{table}[h]
+\centering
+\caption{Dataset Preprocessing Parameters}
+\label{tab:preprocessing_params}
+\vspace{2pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Dataset &
+\makecell{Size\\($H \times W$)}&
+\makecell{Channels\\($N_f$)}&
+\makecell{Window\\Duration (s)}&
+\makecell{Sliding\\Window\\Duration (s)}\\
+\midrule
+SEED      & $8 \times 9$ & 4 & 4.0 & 1.0 \\
+SEED-IV   & $8 \times 9$ & 4 & 4.0 & 1.0 \\
+SEED-V    & $8 \times 9$ & 4 & 4.0 & 1.0 \\
+DEAP      & $6 \times 7$ & 6 & 9.0 & 1.5 \\
+DREAMER   & $4 \times 5$ & 9 & 9.0 & 1.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We preprocessed the EEG recordings using Z-score normalization, window segmentation, Power Spectral Entropy (PSE) extraction \cite{PSE}, spatial mapping, and Linear Dynamical System (LDS) smoothing \cite{ref65}. Table~\ref{tab:preprocessing_params} summarizes the preprocessing parameters for each dataset.
+
+Each trial first undergoes Z-score normalization across individual channels. The normalized signal is divided into fixed windows according to the durations specified in Table~\ref{tab:preprocessing_params}. Within each window, $N_f$ consecutive segments are generated using a sliding window strategy. The PSE is calculated for each segment to represent the spectral characteristics of the EEG signal.  
+
+For spatial mapping, the PSE values from each channel are projected onto an $H \times W$ grid according to the electrode montage. Empty grid locations are filled with zeros to form a single $H \times W$ PSE feature map. Stacking the $N_f$ feature maps along the channel dimension produces a tensor of size $N_f \times H \times W$. Finally, LDS smoothing is applied to the sequence of windows within each trial, operating independently for each spatial location and channel.
+
+
+\subsection{Implementation Details}
+
+Experiments were conducted on a computing server equipped with a 12-core Intel\textsuperscript{\textregistered} Xeon\textsuperscript{\textregistered} Platinum 8255C CPU at 2.50~GHz and an NVIDIA GeForce RTX 2080 Ti GPU with 11~GB of memory. The software environment consisted of Ubuntu 22.04, Python 3.12, PyTorch 2.3.0, and CUDA 12.1.
+
+For conventional machine learning baselines, hyperparameters were selected according to previous studies to ensure competitive performance. For deep learning models, we used the AdamW optimizer \cite{ref64} to minimize cross-entropy loss with a learning rate of $1\times10^{-4}$ and a batch size of $8$. Training proceeded for a maximum of $200$ epochs, using early stopping to prevent overfitting. Performance was evaluated via accuracy (Acc), F1 score (F1), and specificity (Spe).
+
+To assess deployment on resource-constrained platforms, we performed inference experiments on a Raspberry Pi~5 featuring a quad-core 64-bit BCM2712 processor (ARM Cortex-A76 architecture). The device runs Linux and executes an INT8-quantized model. 
+
+We also implemented this INT8-quantized model on a Xilinx Zynq-7000 SoC with an XC7Z020 device (speed grade -2, CLG400 package) to evaluate hardware deployment on programmable logic. Post-implementation resource utilization, including lookup tables (LUTs), flip-flops (FFs), block RAM (BRAM), and digital signal processing slices (DSPs), was analyzed to quantify the on-chip hardware footprint.
+%--------------------------------
+\section{Supplementary Notes}
+
+\subsection{Detailed Analysis of the B1 Neuron Model}
+
+Conventional models, including the Hodgkin–Huxley model \cite{ref43}, rely on nonlinear differential equations that carry significant computational demands. The Leaky Integrate-and-Fire (LIF) model requires repeated multiplications to simulate membrane potential decay, increasing computational overhead on programmable logic devices. The B1 spiking neuron model uses a cascaded time-window mechanism to segment neuronal dynamics, converting membrane potential evolution into a piecewise linear form. This approach removes exponential decay and multiplication operations, simplifying neuron state updates.
+
+In the B1 model, neuronal dynamics occur within layer-wise temporal windows $[T_{\min}^{(n)},T_{\max}^{(n)}]$, where the lower bound of the current layer equals the upper bound of the previous layer. Within each window, the membrane potential evolves linearly until it reaches the firing threshold. The theoretical firing time of neuron $i$ in layer $n$ can thus be computed in closed form, eliminating the iterative integration steps required in conventional models.
+
+The presynaptic temporal offsets $(T_j^{(n-1)}-T_{\min}^{(n)})$ are typically negative because presynaptic spikes arrive before the opening of the current time window. Earlier presynaptic spikes therefore contribute larger temporal offsets, driving the membrane potential toward the threshold and resulting in earlier firing times. If the computed spike time exceeds the upper bound of the window, the neuron remains silent during that inference cycle. This behavior naturally preserves the sparse and event-driven characteristics of spiking neural networks.
+
+\subsection{Division-Free TTFS Encoding Derivation}
+
+TTFS coding maps higher activation values to earlier spike times, generating at most one spike per neuron within a given inference cycle. Standard TTFS encoding normalizes input activations using floating-point division:  
+\begin{equation}
+V_{\mathrm{norm}} = \frac{V_{\mathrm{in}}-V_{\min}}{V_{\max}-V_{\min}}
+\end{equation}
+where $V_{\mathrm{in}}$ is the input activation, and $V_{\min}$ and $V_{\max}$ denote the activation bounds. Because floating-point division introduces computational overhead, the proposed division-free encoder replaces it with power-of-two scaling. 
+
+During training, the activation range $(V_{\max}-V_{\min})$ is monitored to define a scaling factor $S_p$ as the smallest power of two bounding this range:
+\begin{equation}
+S_p = 2^{\lceil \log_2 (V_{\max}-V_{\min}) \rceil}.
+\end{equation}
+
+After training, parameters $V_{\min}$ and $S_p$ are fixed to ensure deterministic encoding during inference. The normalized activation then becomes
+\begin{equation}
+V_{\mathrm{norm}} = \mathrm{clip}\left(\frac{V_{\mathrm{in}}-V_{\min}}{S_p},0,1\right),
+\end{equation}
+where $\mathrm{clip}(\cdot)$ constrains the value to the interval $[0,1]$. This normalized value is mapped to a spike time within the temporal window:
+\begin{equation}
+T_{\mathrm{spike}} = T_{\max}-\mathrm{round}\left(V_{\mathrm{norm}}(T_{\max}-T_{\min})\right).
+\end{equation}
+
+This formulation preserves the fundamental property of TTFS coding, where stronger activations correspond to earlier spikes, while maintaining the sparse temporal representations suitable for spiking neural networks. At the hardware level, a threshold filter discards spike events with latencies exceeding the predefined time window before serializing the remaining valid events into address-event representation (AER) packets, thereby minimizing bus traffic.
+
+\subsection{Gradient Stability Analysis of ATSNN}
+
+\textbf{Definition 1 (Spike-time formulation).}
+Based on the B1 neuron model, the theoretical spike time of neuron $i$ in layer $n$ is defined as
+\begin{equation}
+\tilde{T}_i^{(n)} =
+T_{\min}^{(n)} +
+\epsilon \vartheta_i^{(n)} +
+\sum_j W_{ij}^{(n)}
+\left(
+T_j^{(n-1)} - T_{\min}^{(n)}
+\right).
+\label{eq:supp_theoretical_time}
+\end{equation}
+
+The actual output spike time is constrained by the upper bound of the temporal window:
+\begin{equation}
+T_i^{(n)} =
+\min(\tilde{T}_i^{(n)}, T_{\max}^{(n)}).
+\label{eq:supp_actual_time}
+\end{equation}
+
+A neuron is considered \emph{active} if $\tilde{T}_i^{(n)} < T_{\max}^{(n)}$ and \emph{silent} otherwise.
+
+\textbf{Proposition 1 (Weight gradient).}
+For neuron $i$ in layer $n$, the gradient of the loss function $L$ with respect to synaptic weight $W_{ij}^{(n)}$ is given by the chain rule:
+\begin{equation}
+\frac{\partial L}{\partial W_{ij}^{(n)}} =
+\frac{\partial L}{\partial T_i^{(n)}}
+\cdot
+\frac{\partial T_i^{(n)}}{\partial W_{ij}^{(n)}}.
+\label{eq:supp_chain_rule}
+\end{equation}
+
+For active neurons ($T_i^{(n)}=\tilde{T}_i^{(n)}$), differentiating Eq.~(\ref{eq:supp_theoretical_time}) yields
+\[
+\frac{\partial T_i^{(n)}}{\partial W_{ij}^{(n)}} =
+T_j^{(n-1)} - T_{\min}^{(n)}.
+\]
+
+For silent neurons, $T_i^{(n)}$ is constant at $T_{\max}^{(n)}$, rendering the gradient zero almost everywhere. Thus, the weight gradient follows the piecewise form
+
+\begin{equation}
+\frac{\partial L}{\partial W_{ij}^{(n)}} =
+\begin{cases}
+\displaystyle
+\frac{\partial L}{\partial T_i^{(n)}}
+\left(
+T_j^{(n-1)} - T_{\min}^{(n)}
+\right),
+& \tilde{T}_i^{(n)} < T_{\max}^{(n)} \\[1.0ex]
+0,
+& \tilde{T}_i^{(n)} \ge T_{\max}^{(n)}.
+\end{cases}
+\label{eq:supp_gradient_piecewise}
+\end{equation}
+
+\textbf{Definition 2 (Temporal offset).}
+The presynaptic temporal offset is defined as
+\[
+\Delta T_{ij}^{(n)} = T_j^{(n-1)} - T_{\min}^{(n)}.
+\]
+
+For active neurons, the gradient magnitude is
+
+\[
+\left|
+\frac{\partial L}{\partial W_{ij}^{(n)}}
+\right|
+=
+\left|
+\frac{\partial L}{\partial T_i^{(n)}}
+\right|
+\cdot
+|\Delta T_{ij}^{(n)}|.
+\]
+
+\textbf{Proposition 2 (Temporal-offset bound).}
+Let the temporal window of layer $n-1$ be
+\[
+[T_{\min}^{(n-1)}, T_{\max}^{(n-1)}]
+\]
+with width
+\[
+W_t^{(n-1)} =
+T_{\max}^{(n-1)} - T_{\min}^{(n-1)}.
+\]
+
+Given the B1 cascade condition
+\[
+T_{\min}^{(n)} = T_{\max}^{(n-1)},
+\]
+
+all presynaptic spike times satisfy
+
+\[
+T_j^{(n-1)} \in
+[T_{\min}^{(n-1)}, T_{\max}^{(n-1)}].
+\]
+
+Consequently, the temporal offset is bounded as
+
+\begin{equation}
+- W_t^{(n-1)}
+\le
+\Delta T_{ij}^{(n)}
+\le
+0.
+\label{eq:supp_offset_bound}
+\end{equation}
+
+\textbf{Proposition 3 (Gradient bound).}
+For active neurons, combining the above results yields
+
+\begin{equation}
+0
+\le
+\left|
+\frac{\partial L}{\partial W_{ij}^{(n)}}
+\right|
+\le
+\left|
+\frac{\partial L}{\partial T_i^{(n)}}
+\right|
+W_t^{(n-1)}.
+\label{eq:supp_gradient_bound}
+\end{equation}
+
+Equation~(\ref{eq:supp_gradient_bound}) identifies the temporal window width as a scaling factor for gradient magnitude. Large widths risk gradient explosion, while excessively small widths cause $\Delta T_{ij}^{(n)} \approx 0$, leading to vanishing gradients.
+
+\textbf{Adaptive window regulation.}
+ATSNN addresses this instability by dynamically updating the temporal window bound based on the earliest valid spike time
+
+\[
+T_e^{(n)} =
+\min_{\{i \mid T_i^{(n)} < T_{\max}^{(n)}\}}
+T_i^{(n)}.
+\]
+
+The window update rule is
+
+\begin{equation}
+T_{\max}^{(n)\prime} =
+T_{\max}^{(n)}
++
+\lambda
+\left(
+T_e^{(n)} -
+\frac{T_{\max}^{(n)}+T_{\min}^{(n)}}{2}
+\right).
+\label{eq:supp_window_update}
+\end{equation}
+
+This mechanism acts as a negative-feedback loop: the window contracts when spikes occur early and expands when they occur late. This regulation keeps temporal offsets within an optimal range, stabilizing gradient propagation while maintaining spike-time discrimination. The complete procedure of this mechanism is detailed in Algorithm~\ref{alg:atsnn_update}.
+
+\begin{algorithm}[H]
+\caption{Forward Pass and Adaptive Temporal Window Update}
+\label{alg:atsnn_update}
+\begin{algorithmic}[1]
+
+\Require
+$T^{(n-1)}, W^{(n)}, \vartheta^{(n)}, \epsilon, \lambda,
+T_{\min}^{(n)}, T_{\max}^{(n)}, \text{mode}$.
+
+\Ensure
+$T^{(n)}, T_{\max}^{(n)\prime}$.
+
+\State
+$T_{\min}^{(n)} \gets T_{\max}^{(n-1)}$
+\Comment{Temporal synchronization}
+
+\Statex
+\textit{Phase 1: Event-driven forward pass}
+
+\For{each neuron $i$ in layer $n$}
+
+\State
+$S_i \gets
+\sum_j W_{ij}^{(n)}
+(T_j^{(n-1)} - T_{\min}^{(n)})$
+
+\State
+$\tilde{T}_i^{(n)}
+\gets
+T_{\min}^{(n)}
++
+\epsilon \vartheta_i^{(n)}
++
+S_i$
+
+\State
+$T_i^{(n)}
+\gets
+\min(\tilde{T}_i^{(n)}, T_{\max}^{(n)})$
+
+\EndFor
+
+\Statex
+\textit{Phase 2: Adaptive window update}
+
+\If{$\mathrm{mode} = \texttt{train}$}
+
+\State
+$V \gets
+\{T_i^{(n)} \mid T_i^{(n)} < T_{\max}^{(n)}\}$
+
+\If{$V \neq \emptyset$}
+
+\State
+$T_e^{(n)} \gets \min(V)$
+
+\State
+$T_{\max}^{(n)\prime}
+\gets
+T_{\max}^{(n)}
++
+\lambda
+\left(
+T_e^{(n)}
+-
+(T_{\max}^{(n)} + T_{\min}^{(n)})/2
+\right)$
+
+\EndIf
+
+\State
+$T_{\min}^{(n+1)} \gets T_{\max}^{(n)\prime}$
+
+\Else
+
+\State
+$T_{\max}^{(n)\prime} \gets T_{\max}^{(n)}$
+
+\EndIf
+
+\State
+\Return $T^{(n)}, T_{\max}^{(n)\prime}$
+
+\end{algorithmic}
+\end{algorithm}
+
+
+\subsection{Quantization Strategy}
+We represent the model in INT8 during inference to avoid floating-point computation. This choice reduces the data volume of weights and activations and suits FPGA execution. Uniform 8-bit quantization with symmetric scaling is used. For weights, a signed quantizer $Q_s(\cdot)$ maps a real valued tensor $r$ to INT8 values:
+\begin{equation}
+Q_s(r)=\mathrm{clip}\!\left(
+\mathrm{round}\!\left(
+128\cdot \frac{r}{\max(|r|)}
+\right), -128, 127
+\right)
+\label{eq:quant_w}
+\end{equation}
+
+For feature tensors between layers, an unsigned quantizer $Q_u(\cdot)$ is used for nonnegative activations:
+\begin{equation}
+Q_u(r)=\mathrm{clip}\!\left(
+\mathrm{round}\!\left(
+255\cdot \frac{r}{\max(r)}
+\right), 0, 255
+\right)
+\label{eq:quant_a}
+\end{equation}
+where $\max(r)$ denotes the maximum activation value determined during calibration and fixed for inference.
+
+To mitigate accuracy loss, we apply quantization-aware training. Starting from the converged floating-point model, training resumes with a smaller learning rate while $Q_s(\cdot)$ and $Q_u(\cdot)$ are applied in the forward pass; after each update, weights are projected back onto the quantized set \cite{ref26}. In addition, Batch Normalization (BN) folding is performed by merging BN parameters into the preceding convolution weights and biases.
+
+
+
+\subsection{Detailed Hardware Control Protocol}
+The interaction between the synchronous tensor compute engine and the asynchronous spiking domain is coordinated through a four-phase handshake protocol. This protocol enables reliable communication between heterogeneous clock domains while avoiding metastability and unnecessary switching activity.
+
+When the TTFS encoder generates a spike timestamp $t_i$, it enters a stall state and asserts the request signal (Req). During this period, the address and timestamp buses remain stable to ensure data consistency across the clock-domain boundary. Upon detecting the Req signal, the asynchronous SNN compute engine activates the corresponding compute arrays and schedules event processing. After membrane potential updates for all target neurons are completed, the compute engine asserts the acknowledgment signal (Ack) to terminate the handshake cycle. The encoder releases the bus only after receiving the Ack signal, ensuring that no new data are transmitted until the current event has been fully processed.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{timingdiagram.eps} 
+\caption{Timing diagram of the four-phase asynchronous handshake protocol. The interaction illustrates the strict causal relationships between data bus stabilization, request (Req) assertion by the synchronous TTFS encoder, event-driven membrane potential updates in the asynchronous SNN engine, and the subsequent acknowledgment (Ack).}
+\label{fig:handshake_timing}
+\end{figure}
+
+As illustrated in Fig.~\ref{fig:handshake_timing}, the four-phase handshake strictly enforces causality to maintain data consistency. The cycle begins when the TTFS encoder stabilizes the data bus, enters a stall state, and asserts the Req signal. The SNN engine then detects this request, performs the event-driven membrane update, and asserts the Ack signal. Following this, the encoder recognizes the acknowledgment and deasserts the request. The SNN engine subsequently detects the lowered request and deasserts the acknowledgment, allowing the encoder to release the data bus and exit the stall state.
+
+This handshake mechanism naturally introduces backpressure when the asynchronous domain becomes temporarily saturated, preventing First-In, First-Out (FIFO) overflow and maintaining stable data flow across domains. Because the accelerator processes events sparsely in time, the protocol allows both domains to remain idle during periods without valid events, significantly reducing switching activity and dynamic power consumption.
+
+To further improve energy efficiency, a hierarchical clock-gating strategy reflects the completion behavior of the asynchronous domain within the synchronous pipeline. In the synchronous numeric domain, a unified logic gating coordinator uses a handshake-driven barrier to schedule the main, channel-gating, and spatial-gating paths. When a faster path asserts its completion signal, the coordinator disables its clock enable, placing the submodule in an idle state while awaiting slower paths.
+
+The control logic in the asynchronous event-driven domain applies a layer-wise loop-folding strategy to adapt resource usage across layers. By enabling only the required compute arrays for each layer and disabling the clocks of idle arrays, the framework combines handshake-driven event transfer with hierarchical gating to activate computation strictly on demand and minimize idle switching.
+
+\subsection{Streaming Line Buffer for Convolution}
+To sustain high-throughput convolution under streaming input conditions, the tensor compute engine uses a line buffer constructed from shift registers to reconstruct sliding convolution windows on-chip \cite{conv}.
+
+The line buffer acts as a cascade of FIFO registers storing recent input samples from the data stream. When a new EEG sample enters the pipeline, the buffer updates its internal state via column shifting. This process reconstructs the spatial context required for convolution without repeatedly accessing external memory. For a $3\times3$ convolution kernel, the buffer maintains three rows of feature data, continuously forming local windows by combining the current input with stored samples. The resulting sliding window is forwarded to the multiply-accumulate pipeline every clock cycle.
+
+This reconstruction converts a serialized data stream into parallel convolution windows, minimizing off-chip memory bandwidth and maintaining continuous pipeline utilization. During multibranch execution, concurrent access from the main branch, channel gate, and spatial gate exceeds the dual-port limit of standard block RAMs (BRAMs), creating structural hazards. The architecture therefore implements a multibank buffer supporting one write stream and three read streams per pipeline stage. By banking BRAMs with replication and scheduled reads, the buffer virtualizes multiport access. This design keeps the external interface free of stalls and ensures that internal storage conflicts do not limit feature extraction throughput.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\columnwidth]{BNRELUHSigmoid.eps}
+  \caption{\textbf{Hardware architecture of batch normalization and Hard-Sigmoid modules.}
+  (a) Batch normalization datapath with parameter folding and quantization. 
+  (b) Hard-Sigmoid implementation using shift, add, and clamp operations.}
+  \label{fig:BN_RELU_HSigmoid}
+\end{figure}
+
+\subsection{Hardware Realization of Batch Normalization and Hard-Sigmoid}
+To reduce pipeline depth, the output stage integrates logic that performs batch normalization, quantization, and activation within a single datapath. As shown in Fig.~\ref{fig:BN_RELU_HSigmoid}(a), we use the linearity of convolution to apply an offline parameter folding strategy, merging normalization parameters into the convolution bias. For the Hard-Sigmoid function in the gating paths, we implement a circuit using shift, add, and clamp operations (Fig.~\ref{fig:BN_RELU_HSigmoid}(b)) to avoid exponential calculations. The input is shifted right by three bits and biased by a fixed-point constant (0.5), followed by clamping via comparators.
+
+\subsection{Event-Driven Processing Element Microarchitecture}
+Each SNN processing element (PE) follows an event-driven execution model controlled by a local finite state machine (FSM). This FSM schedules asynchronous events while maintaining minimal power consumption during idle periods.
+
+By default, the PE remains dormant with its local clock fully gated. When an asynchronous event request arrives from the AER interface, the FSM ungates the clock and activates the datapath. During computation, the PE performs a time-modulated multiply--accumulate operation. The datapath subtracts a local reference time from the incoming spike timestamp to obtain the temporal difference. This difference is multiplied by the synaptic weight and accumulated into a 32-bit membrane potential register.
+
+After computation, the PE issues a completion request signal and enters a wait state. Once the array-level synchronizer returns a valid acknowledgment, the local clock is gated again, returning the PE to its dormant state. This event-driven mechanism ensures computation occurs only when valid spike events are present, reducing dynamic power consumption relative to continuously clocked designs.
+
+
+\subsection{Memory-Centric SNN Array Organization}
+
+To address the frequent weight accesses inherent in spiking neural networks, the compute fabric uses a memory-centric architecture where weight storage is co-located with computation. Each SNN array integrates a dedicated SRAM interface that supplies a 32-bit weight word per read cycle. Inside the array, this word is unpacked into four INT8 weights and routed to four processing elements. By widening the memory interface while maintaining INT8 precision, the architecture delivers an effective fourfold increase in weight bandwidth. This strategy reduces the required memory accesses per computation cycle and alleviates the bandwidth limitations of conventional von Neumann architectures.
+
+Multiple SNN arrays operate in parallel and connect via the AER interface, which broadcasts incoming spike events across the fabric. For hidden layers, internally generated spike events recirculate through the same interface to support time-multiplexed execution of subsequent layers on the same physical hardware.
+
+Upon reaching the final layer, results stream to the decision unit. This unit uses a combinational comparator tree to identify the index of the maximum membrane potential while receiving 32-bit membrane potential data, enabling combinational readout in the same cycle without an additional pipeline stage.
+
+\subsection{Barrier Synchronization Mechanism}
+
+To maintain correct execution across parallel arrays without relying on a global clock, each array integrates a lightweight barrier synchronizer.
+
+The synchronizer uses a counter to track completion signals from active processing elements within the array. When a PE finishes its computation for the current event, it increments the counter. Once the counter value matches the number of active neurons scheduled for the current layer, the synchronizer asserts a global completion signal. This barrier ensures all partial membrane updates are completed before the next event is processed, preventing race conditions between concurrent computations. Operating locally within each array, this mechanism avoids centralized control bottlenecks and scales efficiently with the number of compute arrays.
+%--------------------------------
+\section{Supplementary Experiments}
+
+\subsection{Ablation Studies}
+
+We conducted systematic ablation experiments on the SEED dataset to isolate the effect of individual architectural modules using four controlled settings. Exp.1 (DA-SNN) represents the complete model, which integrates a depthwise-separable gated module with channel and spatial gating, division-free time-to-first-spike encoding, and an adaptive temporal window. Exp.2 (No Gates) removes the channel and spatial gating branches while retaining the other mechanisms. Exp.3 (Standard Min-Max) replaces the division-free normalization with conventional floating-point min-max normalization. Finally, Exp.4 (Fixed Time Window) disables the adaptive temporal window in favor of a fixed temporal window across layers.
+
+Table~\ref{tab:supp_ablation} shows that removing the channel and spatial gating mechanisms degrades performance across multiple metrics, dropping accuracy from 96.98\% to 93.80\% and the F1 score from 96.93\% to 93.90\%. Replacing the division-free normalization with conventional floating-point min-max scaling yields a marginal accuracy improvement to 97.04\%. Disabling the adaptive temporal window reduces the accuracy to 92.02\%. These comparisons quantify the contribution of each structural module to the overall classification task.
+
+\begin{table}[h]
+\centering
+\caption{Ablation Study Results on the SEED Dataset.}
+\label{tab:supp_ablation}
+\footnotesize
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{2.5pt}
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Models & Acc (\%) & Spe (\%) & Sen (\%) & Pre (\%) & F1 (\%)\\
+\midrule
+Exp.1 (DA-SNN) & 96.98 & 97.12 & 96.85 & 97.01 & 96.93 \\
+Exp.2 (No Gates) & 93.80 & 93.54 & 94.02 & 93.78 & 93.90 \\
+Exp.3 (Standard Min--Max) & 97.04 & 97.20 & 96.90 & 97.15 & 97.02 \\
+Exp.4 (Fixed Time Window) & 92.02 & 92.15 & 91.88 & 92.05 & 91.96 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\subsection{FPGA Resource Utilization}
+
+We evaluated the deployment characteristics of the accelerator by measuring the FPGA resource utilization of the Zynq-7020 implementation. As detailed in Table~\ref{tab:fpga_resource}, the design occupies a small fraction of the available programmable logic, leaving margin for future architectural extensions.
+
+\begin{table}[!htbp]
+\centering
+\caption{FPGA Resource Utilization}
+\label{tab:fpga_resource}
+\footnotesize
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Resource & Used & Available & Utilization (\%) \\
+\midrule
+LUT & 10822 & 53200 & 20.34 \\
+FF & 8164 & 106400 & 7.67 \\
+BRAM & 22 & 140 & 15.71 \\
+DSP & 32 & 220 & 14.55 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption{FPGA Latency and Energy Measurement}
+\label{tab:power_comparison}  
+\footnotesize
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Metric} & \textbf{Value} & \textbf{Unit} \\
+\midrule
+Latency & 0.018 & ms \\
+Dynamic Power & 40 & mW \\
+Static Power & 108 & mW \\
+Total Power & 148 & mW \\
+Energy / Inference & 2.66 & $\mu$J \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{FPGA Latency and Energy Measurement}
+
+We also measured the inference latency and power consumption of the FPGA implementation. Table~\ref{tab:power_comparison} reports these hardware metrics. The accelerator maintains low latency and energy consumption, reflecting the efficiency of the event-driven architecture.
+
+
+
+\begin{thebibliography}{99}
+
+\bibitem{ref65}
+Zheng, W. L. et al.
+Investigating critical frequency bands and channels for EEG-based emotion recognition with deep neural networks.
+\textit{IEEE Trans. Auton. Ment. Dev.} \textbf{7}, 162--175 (2015).
+
+\bibitem{ref48}
+Zheng, W. L. et al.
+EmotionMeter: A multimodal framework for recognizing human emotions.
+\textit{IEEE Trans. Cybern.} \textbf{49}, 1110--1122 (2018).
+
+\bibitem{ref49}
+Liu, W. et al.
+Comparing recognition performance and robustness of multimodal deep learning models for multimodal emotion recognition.
+\textit{IEEE Trans. Cogn. Dev. Syst.} \textbf{14}, 715--729 (2021).
+
+\bibitem{ref50}
+Koelstra, S. et al.
+DEAP: A database for emotion analysis using physiological signals.
+\textit{IEEE Trans. Affect. Comput.} \textbf{3}, 18--31 (2012).
+
+\bibitem{ref51}
+Katsigiannis, S. and Ramzan, N.
+DREAMER: A database for emotion recognition through EEG and ECG signals.
+\textit{IEEE J. Biomed. Health Inform.} \textbf{22}, 98--107 (2018).
+
+\bibitem{PSE}
+Inouye, T. et al.
+Quantification of EEG irregularity by use of the entropy of the power spectrum.
+\textit{Electroencephalogr. Clin. Neurophysiol.} \textbf{79}, 204--210 (1991).
+
+\bibitem{ref43}
+Hodgkin, A. L. and Huxley, A. F.
+A quantitative description of membrane current and its application to conduction and excitation in nerve.
+\textit{J. Physiol.} \textbf{117}, 500--544 (1952).
+
+\bibitem{ref26}
+Jacob, B. et al.
+Quantization and training of neural networks for efficient integer-arithmetic-only inference.
+In: \textit{Proc. IEEE Conf. Comput. Vis. Pattern Recognit.}, 2704--2713 (2018).
+
+\bibitem{conv}
+Qiu, J. et al.
+Going deeper with embedded FPGA platform for convolutional neural network.
+In: \textit{Proc. 2016 ACM/SIGDA Int. Symp. Field-Programmable Gate Arrays}, 26--35 (2016).
+
+\bibitem{ref64}
+Loshchilov, I. and Hutter, F.
+Decoupled weight decay regularization.
+In: \textit{Proc. Int. Conf. Learn. Represent.} (2019).
+
+\end{thebibliography}
+
+\end{document}

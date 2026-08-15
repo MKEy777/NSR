@@ -1,0 +1,178 @@
+\documentclass[12pt,technote,onecolumn]{IEEEtran}
+%\documentclass[preprint,12pt]{elsarticle}
+%\usepackage{hyperref}
+
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{threeparttable}%%%LBL
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage{url}
+\usepackage{ulem}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{biblatex}
+\usepackage{xcolor}
+\addbibresource{reference.bib}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thealgorithm}{S\arabic{algorithm}}
+\begin{document}
+
+\begin{center}{{\large\bf Supplementary Materials}}
+\end{center}
+\vspace{1mm}
+\begin{center}{
+{\bf ``CFCDBN: Personalized Directional Brain Network Modeling of Cross Frequency Coupling Alterations in Adolescent Anxiety Disorders''}}
+\end{center}
+\vspace{5mm}
+
+\noindent \textbf{MS-1: Results of CFCDBN Analysis Based on PTE}
+\vspace{4mm}
+
+Our analysis of the directed networks using phase transfer entropy (PTE) reveals results that align with the core conclusions obtained from transfer entropy (TE), while providing additional insights. Specifically, at the large-scale network level, group comparisons based on PTE show a marked weakening of connectivity within the Salience Network (SN) and between networks, including the SN to Default Mode Network (DMN), DMN to Dorsal Attention Network (DAN), and Frontoparietal Network (FPN) to DAN. These findings corroborate the results derived from TE, underscoring the involvement of these networks as critical components in the triple network model of cognitive processes.
+
+The observed network alterations likely reflect functional disruptions in patients with anxiety disorder (AD), highlighting abnormal interactions among the SN, DMN, DAN, and FPN. These disruptions compromise the integrity of the triple network model and may contribute to deficits in salience processing, attentional control, and executive regulation. Additionally, the PTE analysis revealed stronger directed connectivity from the Sensorimotor Network (SMN) to both the SN and DMN in AD patients. This enhanced connectivity may be associated with altered SMN engagement in anxiety, possibly reflecting abnormal network interactions or compensatory processes. At the node level, we observed similar information processing abnormalities in regions such as the insula (INS), thalamus (THA), and inferior parietal lobule (IPL). These regions, which are involved in salience detection, sensory processing, and cognitive control, may indicate an impaired ability of the brain to effectively regulate and integrate information in AD patients.
+
+\begin{figure*}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{./fig.pdf}
+    \caption{Results of CFCDBN analysis based on PTE. (A) Directed connectivity between ROIs. (B) Directed connectivity between large-scale functional networks. (C) Significant differences in directed connectivity across networks. (D) Significant differences in directed connectivity between brain regions.}
+    \label{fig:S1}
+\end{figure*}
+
+\newpage
+
+\noindent \textbf{MS-2: Mapping ROIs to Yeo7 Networks}
+\vspace{4mm}
+
+The algorithm describes how to map the anatomical ROIs to the functional networks using MNI (Montreal Neurological Institute) space coordinates. It aligns the spatial coordinates of the anatomical regions with the corresponding functional network regions, based on their spatial overlap. This method is only referenced in this paper.
+
+\begin{algorithm}
+\caption{Mapping ROIs to Yeo7 Networks}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Paths to Yeo7 and AAL data files
+\State \textbf{Output:} Network assignment for each ROI
+
+\State \texttt{Load YeoData, AALData}
+
+\State \texttt{Initialize ROINetwork as a 116x7 matrix of zeros}
+
+\For{ROI = 1 to 116}
+    \For{iNetwork = 1 to 7}
+        \State \texttt{Temp = count of voxels in YeoData corresponding to network iNetwork for ROI}
+        \State \texttt{ROINetwork[ROI, iNetwork] = Temp}
+    \EndFor
+\EndFor
+
+\State \texttt{MaxNumber, YeoNetwork = max(ROINetwork, axis=2)}
+
+\State \textbf{Return} MaxNumber, YeoNetwork
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+
+\noindent \textbf{MS-3: Brain Regions and Their Corresponding RSNs}
+\vspace{4mm}
+
+This table provides the mapping between anatomical regions of interest (ROIs) and the corresponding large-scale functional networks. The regions are based on the AAL (Automated Anatomical Labeling) template, which includes standardized regions widely used in neuroimaging studies. The table also incorporates the mapping of these regions to five predefined large-scale functional networks, including the Default Mode Network (DMN), Salience Network (SN), Frontoparietal Network (FPN), Dorsal Attention Network (DAN), and Sensorimotor Network (SMN).
+
+\begin{table}[htbp]
+\centering
+\caption{Brain regions and their corresponding RSNs}
+\begin{tabular}{ccc}
+\toprule
+\textbf{Node} & \textbf{Region(AAL)} & \textbf{RSNs} \\
+\midrule
+1  & Hippocampus\_L        & Default Mode Network (DMN) \\
+2  & Hippocampus\_R        & Default Mode Network (DMN) \\
+3  & Frontal\_Sup\_Medial\_L & Default Mode Network (DMN) \\
+4  & Frontal\_Sup\_Medial\_R & Default Mode Network (DMN) \\
+5  & Precuneus\_L          & Default Mode Network (DMN) \\
+6  & Precuneus\_R          & Default Mode Network (DMN) \\
+7  & Angular\_L            & Default Mode Network (DMN) \\
+8  & Angular\_R            & Default Mode Network (DMN) \\
+9  & Cingulum\_Post\_L     & Default Mode Network (DMN) \\
+10 & Cingulum\_Post\_R     & Default Mode Network (DMN) \\
+11 & Insula\_L             & Salience Network (SN) \\
+12 & Insula\_R             & Salience Network (SN) \\
+13 & Cingulum\_Ant\_L      & Salience Network (SN) \\
+14 & Cingulum\_Ant\_R      & Salience Network (SN) \\
+15 & Amygdala\_L           & Salience Network (SN) \\
+16 & Amygdala\_R           & Salience Network (SN) \\
+17 & Thalamus\_L           & Salience Network (SN) \\
+18 & Thalamus\_R           & Salience Network (SN) \\
+19 & Frontal\_Mid\_L       & Frontoparietal Network (FPN) \\
+20 & Frontal\_Mid\_R       & Frontoparietal Network (FPN) \\
+21 & Parietal\_Inf\_L      & Frontoparietal Network (FPN) \\
+22 & Parietal\_Inf\_R      & Frontoparietal Network (FPN) \\
+23 & Frontal\_Inf\_Tri\_L  & Frontoparietal Network (FPN) \\
+24 & Frontal\_Inf\_Tri\_R  & Frontoparietal Network (FPN) \\
+25 & Frontal\_Sup\_L       & Dorsal Attention Network (DAN) \\
+26 & Frontal\_Sup\_R       & Dorsal Attention Network (DAN) \\
+27 & Parietal\_Sup\_L      & Dorsal Attention Network (DAN) \\
+28 & Parietal\_Sup\_R      & Dorsal Attention Network (DAN) \\
+29 & Postcentral\_L        & Sensorimotor Network (SMN) \\
+30 & Postcentral\_R        & Sensorimotor Network (SMN) \\
+31 & Precentral\_L         & Sensorimotor Network (SMN) \\
+32 & Precentral\_R         & Sensorimotor Network (SMN) \\
+33 & Supp\_Motor\_Area\_L  & Sensorimotor Network (SMN) \\
+34 & Supp\_Motor\_Area\_R  & Sensorimotor Network (SMN) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\newpage
+
+\noindent \textbf{MS-4: Methodology for Directed Connectivity Estimation}
+\vspace{4mm}
+
+\textbf{Transfer Entropy (TE) Estimation}
+\vspace{4mm}
+
+Directed connectivity was estimated using the MuTE MATLAB toolbox (Montalto et al., 2014) \cite{montalto2014mute}, available at (\url{https://github.com/montaltoalessandro/MuTE}). Specifically, the BINNUE method was adopted, which combines a binned probability estimator (BIN) with non-uniform embedding (NUE). This approach has been demonstrated to achieve an optimal balance between computational efficiency and estimation accuracy in multivariate TE analysis.
+
+For TE computation, all selected regions of interest (ROIs) were analyzed at a sampling rate of 30 Hz. A model order of 5 was selected, corresponding to a 0.167-second history window, to account for delayed dependencies between the driving and target signals. This time window was chosen based on previous studies indicating that large-scale EEG microstate dynamics typically evolve at intervals of 80–120 ms \cite{khanna2015microstates}. With this, we considered a temporal resolution of approximately 33 ms (i.e., 30 Hz) sufficient to capture the macroscopic dynamics of information flow.
+
+Probability distributions were estimated using six quantization levels, leveraging non-uniform entropy estimation. Statistical significance was assessed using 200 surrogate datasets, with connections retained at a significance threshold of $\alpha = 0.05$. To ensure strict causal directionality, present-time values were excluded from the embedding, and no scalp conduction correction was applied.
+\vspace{6mm}
+
+\textbf{Phase Transfer Entropy (PTE) Estimation}
+\vspace{4mm}
+
+Phase Transfer Entropy (PTE) is a nonlinear measure of directional information flow between time series that can be applied to nonstationary data. Unlike Granger causality, which requires stationarity, PTE directly quantifies information transfer using instantaneous phase dynamics. 
+
+Given two time series $\{x_i\}$ and $\{y_i\}$, where $i = 1, 2, \dots, M$, the instantaneous phases $\{x_i^p\}$ and $\{y_i^p\}$ are extracted using the Hilbert transform. The transfer entropy from $x$ to $y$ at delay $\tau$ is defined as:
+\begin{equation}
+PTE_{x \to y} = \sum_i p\left( y_{i+\tau}^p, y_i^p, x_i^p \right) \log \frac{p\left(y_{i+\tau}^p \mid y_i^p, x_i^p \right)}{p\left( y_{i+\tau}^p \mid y_i^p \right)} ,
+\end{equation}
+where the probabilities are estimated by building histograms of instantaneous phase occurrences across time and channels. Following \cite{das2024electrophysiological}, the bin width for phase histograms was set as:
+\[
+3.49 \times \mathrm{STD} \times M^{-1/3},
+\]
+where $\mathrm{STD}$ denotes the standard deviation of the phase series and $M$ is the number of phase changes. The delay $\tau$ was set to:
+\[
+2M/M_\pm,
+\]
+where $M_\pm$ represents the number of zero crossings. Previous studies have shown that PTE is robust to variations in both the delay and the number of bins, making it reliable for this type of analysis \cite{das2020spatiotemporal, das2022electrophysiological, das2022causal}.
+
+For the implementation of PTE, the algorithm was adapted from the MATLAB code provided by \cite{das2022causal} (\url{https://github.com/scsnl/Das_Cortex_2021}).
+
+
+
+
+\vspace{11pt}
+\vfill
+\begin{refcontext}[sorting=none]  
+    \printbibliography  
+\end{refcontext}
+
+
+\end{document}

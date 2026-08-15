@@ -1,0 +1,57 @@
+{
+  "status": "completed",
+  "mode": "b1_control_only",
+  "created_at": "2026-08-08T15:56:29",
+  "completed_at": "2026-08-08T15:56:29",
+  "arguments": {
+    "dataset": "seed",
+    "protocol": "random_80_20",
+    "seed": 42,
+    "batch_size": 8,
+    "lr": 0.0005,
+    "gamma_ttfs": 10.0,
+    "max_epochs": 200,
+    "stage_epochs": "0,5,max",
+    "jacobian_samples": 32,
+    "gradient_log_every": 1,
+    "max_train_batches": null,
+    "b1_width": 170,
+    "b1_depth": 4,
+    "b1_active_fraction": 0.5,
+    "b1_control_only": true,
+    "feature_file": null,
+    "output_dir": "experiment_outputs\\jacobian_spectrum",
+    "run_id": "b1_control_4x170_seed42_v2",
+    "device": "auto"
+  },
+  "artifacts": [
+    "b1_control_summary.json",
+    "b1_control_eigenvalues.npz",
+    "b1_control_spectrum.png"
+  ],
+  "b1_control": {
+    "configuration": {
+      "width": 170,
+      "depth": 4,
+      "seed": 42,
+      "active_fraction": 0.5
+    },
+    "models": {
+      "B1": {
+        "count": 680,
+        "finite_count": 680,
+        "max_modulus": 0.7655691470386208,
+        "median_modulus": 0.005006511258581601,
+        "fraction_inside_unit_circle": 1.0
+      },
+      "alpha1": {
+        "count": 680,
+        "finite_count": 680,
+        "max_modulus": 17.881086205321818,
+        "median_modulus": 0.004595780633430995,
+        "fraction_inside_unit_circle": 0.85
+      }
+    },
+    "interpretation": "Square B1/alpha1 initialization control. Unit-circle eigenvalue comparison applies only to this square control, not to rectangular DA-SNN layers."
+  }
+}

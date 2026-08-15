@@ -34,6 +34,7 @@ def train_and_record(
     min_delta=1e-4,
     feature_file=None,
     output_dir=None,
+    use_dynamic_window=True,
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     set_seed(seed)
@@ -52,7 +53,7 @@ def train_and_record(
             "use_depthwise_separable": True,
             "use_dsgm": True,
             "use_ttfs_encoder": True,
-            "use_dynamic_window": True,
+            "use_dynamic_window": use_dynamic_window,
         },
     )
 
@@ -244,6 +245,8 @@ def parse_args():
                         help="Window-update gain used by _update_time_windows (matches common/trainer.py default)")
     parser.add_argument("--patience", type=int, default=30)
     parser.add_argument("--feature-file", type=str, default=None, help="Override feature .mat path")
+    parser.add_argument("--no-dynamic-window", action="store_true",
+                        help="Disable adaptive temporal window updates (fixed window baseline)")
     parser.add_argument("--output-dir", type=str, default=None,
                         help="Output directory (default: experiment_outputs/window_evolution)")
     return parser.parse_args()
@@ -257,6 +260,7 @@ if __name__ == "__main__":
     print(f"  Dataset:    {args.dataset}")
     print(f"  Seed:       {args.seed}")
     print(f"  Max epochs: {args.max_epochs}")
+    print(f"  Dynamic window: {not args.no_dynamic_window}")
     print(f"  Output:     {out_dir or 'experiment_outputs/window_evolution'}")
 
     history, layers = train_and_record(
@@ -269,5 +273,6 @@ if __name__ == "__main__":
         patience=args.patience,
         feature_file=args.feature_file,
         output_dir=out_dir,
+        use_dynamic_window=not args.no_dynamic_window,
     )
     plot_window_evolution(history, layers, save_dir=out_dir)

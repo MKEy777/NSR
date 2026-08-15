@@ -1,0 +1,723 @@
+\documentclass[12pt,technote,onecolumn]{IEEEtran}
+%\documentclass[preprint,12pt]{elsarticle}
+%\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{threeparttable}%%%LBL
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage{url}
+\usepackage{ulem}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{amssymb}
+\captionsetup{compatibility=false}
+\begin{document}
+\begin{center}{{\large\bf Response to Reviews} \\
+{\bf ``CFCDBN: Personalized Directional Brain Network Modeling of Cross Frequency Coupling Alterations in Adolescent Anxiety Disorders''\\
+Paper ID: JBHI-03404-2025}}\\
+\end{center}
+
+\vspace{4mm} We sincerely thank the reviewers for their insightful and constructive feedback. We greatly appreciate the recognition of our work and the positive comments regarding the novelty and potential of the CFCDBN framework. The reviewers' suggestions have been invaluable in enhancing the clarity and quality of the manuscript.
+
+We have carefully addressed all the comments and suggestions point by point, and the corresponding revisions have been incorporated into the manuscript. All changes are clearly highlighted for ease of review. As shown below, we provide our detailed responses to each of the reviewers' comments.
+
+\begin{center}
+\underline{Responses to Comments of The Editors}
+\end{center}
+
+\vspace{3mm}
+
+\noindent {\bf Comment:} ``{\it Please increase the font size in Figure 5 to improve readability.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment:} 
+We sincerely thank the Associate Editor for the recognition of our work and for the constructive feedback provided. Regarding the issue with Fig. 5, we have updated the manuscript by increasing the font size as requested to improve the readability of the figure. We believe this adjustment will enhance the overall clarity of the visual presentation.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\linewidth]{Fig. 5.pdf}
+    \caption*{Fig. 5: Correlation between Directed Connectivity and SCARED Scores}
+\end{figure}
+
+
+
+\newpage
+\clearpage
+\begin{center}
+\underline{Responses to Comments of Reviewer 1}
+\end{center}
+\vspace{3mm}
+
+\noindent {\bf Comment 1.1:} ``{\it My only comment is that since the authors find that many of the large-scale brain networks namely, the SN, DMN, and FPN are involved as biomarkers of AD, they should discuss their findings in terms of the triple network model recently proposed in human cognition literature. The authors should add a separate sub-section in the Discussion section to discuss their findings in detail in the context of the triple network model using the following references since these look very strongly and directly relevant to the authors' major findings:  
+
+[1] https://www.nature.com/articles/s41467-021-23509-x  
+
+[2] https://academic.oup.com/cercor/article/26/5/2140/1754229  
+
+[3] https://elifesciences.org/articles/99018  
+
+[4] https://academic.oup.com/cercor/article/30/10/5309/5840454  
+
+[5] https://www.sciencedirect.com/science/article/pii/S1053811922000568  
+
+[6] https://academic.oup.com/cercor/article/32/23/5343/6524032  
+
+[7] https://www.sciencedirect.com/science/article/pii/S0010945221003701  
+
+[8] https://academic.oup.com/cercor/article/34/7/bhae287/7718277  
+
+[9] https://link.springer.com/article/10.1007/s00429-010-0262-0  
+}''
+\vspace{1mm}
+
+\noindent \textbf{Response to Comment 1.1:} 
+
+We thank the reviewer for the insightful and thought-provoking suggestion. We fully agree that the triple network model, which involves the Salience Network (SN), Default Mode Network (DMN) and Frontoparietal Network (FPN), is highly relevant to our findings in the context of our CFCDBN analysis. These large-scale brain networks are involved in a variety of cognitive functions, including attention, memory, and cognitive control. Specifically, SN plays a critical role in detecting and filtering relevant stimuli, DMN is associated with self-referential thinking and memory processing, and FPN is involved in higher-order executive functions. Disruptions in the interactions between these networks may be the basis for the cognitive and emotional dysregulation observed in anxiety disorder (AD).  
+
+In response to the reviewer’s suggestion, we have added a dedicated subsection in the Discussion titled ``\textbf{Potential Cognitive Circuit Abnormalities in AD Patients}" to explore our findings within the framework of the triple network model. Specifically, we discuss how dysfunctions in SN, DMN, and FPN contribute to the pathophysiology of AD, particularly in relation to cognitive dysfunction. These findings emphasize the role of these networks as biomarkers for AD and deepen our understanding of the neural dynamics involved in the disease. 
+
+The corresponding revisions have been incorporated into the \textbf{DISCUSSION} section (see \textbf{lines 817–868} in Manuscript with tracked changes), and the modified text is highlighted with underlining as shown below.
+
+\uline{``From the perspective of large-scale networks, our study found that both the internal coupling strength and inter-network communication efficiency in brain networks of AD patients were significantly lower than in healthy controls. The reduction in within-network connectivity was primarily concentrated in SN. Previous studies have widely established the close association between SN and high trait anxiety in adolescents, suggesting that this dysfunction may lead to impairments in salience processing and cognitive regulation in AD patients [80]. Additionally, directed connections between FPN and DMN were also significantly reduced. These findings collectively pointed to a systemic disruption in the coordination of SN, FPN, and DMN in the brains of AD patients. Such disruptions are aligned with the classic triple network model (composed of SN, FPN, and DMN),which highlights the dynamic coordination of these networks in regulating attention, memory, and other higher cognitive functions, and their close relationship with the neural mechanisms of various diseases, including AD [81] [82].} 
+
+\uline{Previous fMRI and intracranial EEG studies have confirmed that SN, as a central hub of information in the brain, can flexibly allocate attention resources and rapidly switch tasks by driving the activation or inhibition of FPN and DMN [47] [82] [83] [84]. Correspondingly, the group analysis results of our CFCDBN constructed based on TE and PTE consistently revealed a significant reduction in information transmission within the SN network in AD patients. As a central hub for inter-network regulation, SN dysfunction reduced its capacity for information transmission, thereby weakened its modulation of the FPN and DMN. This disruption impaired triple-network coordination and was reflected in insufficient attentional resource allocation and reduced cognitive flexibility at rest. Previous research at the node level has identified the right insula (INS) within SN as a pivotal hub for causal control across networks that exhibits the highest capacity for information outflow [47] [82] [83] [84] [85]. The static PAC analysis in this study was consistent with this finding: in patients with AD, cross-frequency coupling within the right INS was significantly enhanced, suggesting an imbalance in its coupling regulation, which weakened effective information generation and inter-network transmission efficiency. Further directed connectivity analysis revealed abnormal information flow in key pathways, such as THA.L→INS.R, INS.R→PCUN.L, and PCUN.L→SPG.R in AD patients. These results indicated that right INS abnormalities not only disrupted information integration within SN but also weakened its mediating role in subcortical-cortical circuits, ultimately reducing its effective regulation of the DMN and FPN. In conclusion, this study supported the ``circuit dysfunction" mechanism of triple network theory and provided new neurodynamic evidence to explain the deficits in salience processing and cognitive regulation observed in AD patients."}
+
+These points have been incorporated into the revised manuscript, along with the references suggested by the reviewer. We believe that this addition will further deepen our understanding of the neural basis of anxiety disorder and align our findings with current cognitive neuroscience models.
+
+\vspace{1mm}
+
+\noindent \textbf{Reference to Comment 1.1:} 
+
+\noindent(Note: \textit{``[*]'' refers to the reference number used in this response, while ``[ ]'' refers to the reference number in the manuscript.})
+
+\noindent[47]\:Anup Das and Vinod Menon. ``Spatiotemporal integrity and spontaneous nonlinear dynamic properties of the salience network revealed by human intracranial electrophysiology: a multicohort replication". In: \textit{Cerebral Cortex} 30.10 (2020), pp. 5309–5321.
+
+\noindent[80]\:Haiyang Geng et al. ``Decreased intra-and inter-salience network functional connectivity is related to trait anxiety in adolescents". In: \textit{Frontiers in Behavioral Neuroscience} 9 (2016), p. 350.
+
+\noindent[81]\:Hongna Zheng et al. ``The altered triple networks interaction in depression under resting state based on graph theory". In: \textit{BioMed Research International} 2015.1 (2015), p. 386326.
+
+\noindent[82]\:Anup Das and Vinod Menon. ``Electrophysiological dynamics of salience, default mode, and frontoparietal networks during episodic memory formation and recall revealed through multi-experiment iEEG replication”. In: \textit{Elife} 13 (2024), RP99018.
+
+\noindent[83]\:Weidong Cai et al. ``Dynamic causal brain circuits during working memory and their functional controllability”. In: \textit{Nature Communications} 12.1 (2021), p. 3314.
+
+\noindent[84]\:Vinod Menon and Lucina Q Uddin. ``Saliency, switching, attention and control: a network model of insula function”. In: \textit{Brain Structure and Function} 214.5 (2010), pp. 655–667.
+
+\noindent[85]\:Weidong Cai et al. ``Causal interactions within a frontalcingulate-parietal network during cognitive control: Convergent evidence from a multisite–multitask investigation”. In: \textit{Cerebral Cortex} 26.5 (2016), pp. 2140–2153.
+
+
+\vspace{4mm}
+
+
+\noindent {\bf Comment 1.2:} ``{\it Moreover, recently phase transfer entropy (PTE) has been proposed to be an efficient estimator of directional connectivity especially in EEG/iEEG literature. Therefore, the authors should assess how PTE compares to their directional connectivity metrics TE. Application of PTE can be found in some of the above papers that I mentioned.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 1.2:} 
+
+We sincerely thank the reviewer for highlighting this point. Phase transfer entropy (PTE) has been increasingly recognized in the EEG/iEEG literature as an efficient estimator of directional connectivity and represents an important alternative to traditional measures such as transfer entropy (TE). In this context, it is important to clarify why PTE was not used in the initial submission and to report the supplementary results obtained after incorporating it during the revision.
+
+At the time of designing this study, our primary aim was to establish a data-driven framework (CFCDBN) for uncovering the propagation rules of oscillatory coupling signals and identifying key brain regions. To the best of our knowledge, no prior work had performed directional connectivity analysis directly on dynamic coupling sequences. Accordingly, we proposed a novel CFCDBN framework consisting of three steps: (1) computation of dynamic coupling sequences, (2) construction of directed brain networks, and (3) graph-based classification. In order to rigorously validate the fundamental feasibility and stability of this framework, we deliberately employed widely used and well-validated baseline methods, such as TE. This choice ensured interpretability and comparability of results, even though more recent or specialized alternatives could also be considered.
+
+We fully acknowledge that each module of the proposed framework could be replaced with state-of-the-art or customized approaches. Accordingly, following the reviewer’s suggestion, we have incorporated PTE as a comparative method in the revised manuscript. The results confirm the robustness and reproducibility of the proposed framework, thereby enhancing the validity of our findings.
+
+
+The corresponding revisions have been incorporated into the \textbf{MATERIALS AND METHOD (E. Construction of CFC-based directed brain network \textit{(5) Construction of the CFCDBN)}} section (see \textbf{lines 416–431} in Manuscript with tracked changes), and the modified text is highlighted with underlining as shown below.
+
+\uline{``To further evaluate the reproducibility and robustness of the proposed framework, we adopted phase transfer entropy (PTE) as a comparative measure [46]. PTE has been widely applied in EEG/iEEG studies and has been validated as a reliable index of directional connectivity in electrophysiological signals [47] [48] [49] [50] [51]. In our work, PTE was used as a reference to verify the consistency of our results, given its computational efficiency and enhanced sensitivity to phase information compared with conventional TE. A detailed mathematical description of PTE and the parameter settings used in the directed connectivity analysis are provided in the supplementary materials.}
+
+\uline{By encoding directional information flow into the MI matrix, the CFCDBN systematically models dynamic cross-frequency interactions across brain regions, which are subsequently used for downstream graph-based learning."}
+
+Building on the methodological revisions described above, we next present the CFCDBN network analysis results obtained using PTE, which are included in the \textbf{supplementary materials}. As illustrated in \textbf{Fig. 1}, these results were generated under the same experimental settings and presented in the same format as the TE-based analyses shown in \textbf{Fig. 4} of the manuscript, thereby complementing the TE findings and further reinforcing the robustness of the proposed framework.
+
+\begin{figure*}[htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{./fig.pdf}
+  \caption{Results of CFCDBN analysis based on PTE. (A) Directed connectivity between ROIs. (B) Directed connectivity between large-scale functional networks. (C) Significant differences in directed connectivity across networks. (D) Significant differences in directed connectivity between brain regions.}
+        
+    \label{fig:0}
+\end{figure*}
+
+Our findings indicate that the results of the directed network analysis using PTE were largely consistent with the core conclusions derived from TE, while also offering additional information. Specifically, at the large-scale network level, PTE-based group comparisons revealed a significant reduction in connectivity within SN, as well as between networks, including SN to DMN, DMN to DAN, and FPN to DAN. These results aligned with those of TE, reinforcing the involvement of these networks as essential components of the triple network model in cognitive processes. The observed network alterations likely reflect functional disruptions in AD patients, highlighting abnormal interactions among SN, DMN, DAN, and FPN that compromise the integrity of the triple network model, potentially underlying deficits in salience processing, attentional control, and executive regulation.
+Furthermore, PTE analysis revealed stronger directed connectivity from SMN to SN and DMN in AD patients, potentially associated with altered SMN engagement in anxiety. This enhanced connectivity may reflect abnormal network interactions or compensatory mechanisms, in line with findings suggesting a disruption in the balance between sensory processing and regulatory control networks in anxiety. At the node level, we observed similar information processing abnormalities in regions such as the INS, thalamus (THA), and inferior parietal lobule (IPL), which are key to salience detection, sensory processing, and cognitive control. These may reflect impaired brain regulation and integration of information.
+
+From a computational perspective, PTE offers clear advantages over TE. Specifically, during the construction of the 34×34 directed connectivity matrices (representing all pairwise interactions among 34 ROIs), PTE significantly reduced computational time compared to TE. This improvement is due to PTE's lower algorithmic complexity, as it directly estimates directional information flow from phase dynamics, bypassing the need to reconstruct high-dimensional probability distributions, which is computationally intensive in TE. Furthermore, PTE requires fewer prior parameter settings, minimizing both the tuning burden and the risk of estimation bias.
+These advantages make PTE a more computationally efficient and user-friendly estimator, particularly when scaling to larger networks. For instance, in future research, we plan to adopt PTE as a substitute for TE in directed network analysis, especially in studies involving a greater number of ROIs or even voxel-level resolution. The reduced complexity of PTE will facilitate the extension of the proposed framework to higher-dimensional settings, while maintaining both robustness and interpretability.
+
+\vspace{1mm}
+
+\noindent \textbf{Reference to Comment 1.2:} 
+
+\noindent(Note: \textit{``[*]'' refers to the reference number used in this response, while ``[ ]'' refers to the reference number in the manuscript.})
+
+\noindent[46]\:Muriel Lobier et al. ``Phase transfer entropy: a novel
+phase-based measure for directed connectivity in networks
+coupled by oscillatory interactions”. In: \textit{Neuroimage} 85 (2014), pp. 853–872.
+
+\noindent[48]\:Anup Das, Carlo de Los Angeles, and Vinod Menon. ``Electrophysiological foundations of the human defaultmode
+network revealed by intracranial-EEG recordings during resting-state and cognition”. In: \textit{Neuroimage} 250 (2022), p. 118927.
+
+\noindent[49]\:Anup Das and Vinod Menon. ``Replicable patterns of causal information flow between hippocampus and prefrontal cortex during spatial navigation and spatial–verbal memory formation”. In: \textit{Cerebral Cortex} 32.23 (2022), pp. 5343–5361.
+
+\noindent[50]\:Anup Das and Vinod Menon. ``Causal dynamics and information flow in parietal-temporal-hippocampal
+circuits during mental arithmetic revealed by hightemporal
+resolution human intracranial EEG”. In: \textit{Cortex} 147 (2022), pp. 24–40.
+
+\noindent[51]\:Anup Das and Vinod Menon. ``Frequency-specific directed connectivity between the hippocampus and parietal cortex during verbal and spatial episodic memory: an intracranial EEG replication”. In: \textit{Cerebral Cortex} 34.7 (2024), bhae287.
+
+
+
+
+\newpage
+\clearpage
+\begin{center}
+\underline{Responses to Comments of Reviewer 2}
+\end{center}
+\vspace{3mm}
+
+\noindent {\bf Comment 2.1:} ``{\it While the literature review covers relevant works, it could benefit from including more studies on GNN. Relevant references are provided below for consideration:
+
+[1] Linking Attention-Based Multiscale CNN With Dynamical GCN for Driving Fatigue Detection. IEEE Transactions on Instrumentation and Measurement, 2021.
+
+[2] Hybrid EEG-fNIRS Decoding with Dynamic Graph Convolutional-Capsule Networks for Motor Imagery/Execution. Biomedical Signal Processing and Control. 2025.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 2.1:} 
+
+We sincerely thank the reviewer for the valuable suggestion. We fully agree that incorporating more studies on graph neural networks (GNNs) will not only strengthen the literature review but also provide a more complete background for our work. To address this, we have added the two recommended references, which are particularly relevant to our research on GNN-based methods in neuroimaging and brain connectivity analysis. These studies highlight the growing application of GNNs in neuroinformatics, particularly in tasks related to motor imagery, fatigue detection, and multimodal data fusion (EEG and fNIRS), which align well with the direction of our research.
+
+The corresponding revisions have been incorporated into the \textbf{INTRODUCTION} section (see \textbf{lines 161–171} in Manuscript with tracked changes), and the modified text is highlighted with underlining as shown below.
+
+``Furthermore, CFCDBN can be naturally represented as a directed graph encoding connectivity strength, information flow, and topological structure.
+\uline{In the field of graph-structured feature modeling the graph neural network (GNN) is an emerging deep learning framework that has been extensively applied to the network modeling and analysis of neuroimaging data such as EEG and fNIRS [29] [30]. Based on this, we introduce a new graph classification architecture, referred to as the Direction-Aware Graph Neural Network (DA-GNN), which addresses the limitations of traditional GNNs in capturing directional connectivity and enables effective modeling of cross-frequency interactions."} 
+
+\vspace{1mm}
+
+\noindent \textbf{Reference to Comment 2.1:} 
+
+\noindent(Note: \textit{``[*]'' refers to the reference number used in this response, while ``[ ]'' refers to the reference number in the manuscript.})
+
+\noindent[29]\:Hongtao Wang et al. ``Linking attention-based multiscale CNN with dynamical GCN for driving fatigue detection”. In: \textit{IEEE Transactions on Instrumentation and Measurement} 70 (2020), pp. 1–11.
+
+\noindent[30]\:Hongtao Wang et al. ``Hybrid EEG-fNIRS decoding with dynamic graph convolutional-capsule networks for motor imagery/execution”. In: \textit{Biomedical Signal Processing and Control} 104 (2025), p. 107570.
+
+\vspace{4mm} 
+
+\noindent {\bf Comment 2.2:} ``{\it The connection between the limitations of existing studies and the innovations of this paper is rather abrupt. It is suggested to add specific cases where ``traditional methods cannot capture dynamic directed information flow" to strengthen the necessity of the research.
+}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 2.2:} 
+
+We greatly appreciate the reviewer’s valuable suggestion. In response, we have added specific examples to more clearly illustrate the limitations of traditional methods in capturing dynamic directed information flow, which directly emphasizes the necessity of our proposed research.
+
+In the revised manuscript, we discuss the limitations of traditional approaches in more detail, addressing the following key points:
+
+\textbf{(1)} Loss of Temporal Resolution and Dynamics in Traditional PAC: Traditional PAC methods compute phase-amplitude coupling by averaging amplitudes across phase bins within a fixed time window, resulting in a single coupling strength value. This approach compromises temporal resolution and fails to capture the dynamic nature of neural interactions across time, which is crucial for understanding the evolution of brain connectivity [15] [22].
+
+\textbf{(2)} Limited Regional Scope and Lack of Causal Interactions: Traditional PAC analysis is often confined to single-channel data or specific brain regions, missing the opportunity to examine dynamic inter-channel interactions. Additionally, traditional PAC methods do not account for directional connectivity, which is vital for understanding the flow of information between brain regions and the underlying causal relationships. 
+
+These limitations are addressed in our study by using dynamic cross-frequency coupling (CFC) and directed brain networks (DBN), which allow us to capture both directional and time-varying interactions between brain regions, offering a more comprehensive understanding of the brain’s functional dynamics.
+
+The corresponding revisions have been incorporated into the \textbf{INTRODUCTION} section (see \textbf{lines 116–132} in Manuscript with tracked changes), and the modified text is highlighted with underlining as shown below.
+
+\uline{``In terms of coupling strength calculation, conventional static PAC analyses compute a single coupling strength by averaging amplitudes across phase bins within a fixed time window [15]. The minimum window length is constrained by the coupled phase frequency, as at least one full cycle is required to estimate amplitude distributions [22]. Given the increasing evidence of widespread abnormalities in brain dynamics and disrupted communication across large-scale brain networks in individuals with AD [23] [24] [25], these methodological constraints inherently reduce temporal resolution, limit the capture of dynamic neural interactions, and hinder the accurate inference of directional information flow across large-scale brain networks. Furthermore, the absence of a unified computational framework capable of integrating PAC-based features into downstream classification tasks further impedes the advancement of computer-aided diagnostic and analytical methods for AD.“}
+
+\vspace{1mm}
+
+\noindent \textbf{Reference to Comment 2.2:} 
+
+\noindent(Note: \textit{``[*]'' refers to the reference number used in this response, while ``[ ]'' refers to the reference number in the manuscript.})
+
+\noindent[15]\:Adriano BL Tort et al. ``Measuring phase-amplitude
+coupling between neuronal oscillations of different frequencies”. In: \textit{Journal of neurophysiology} 104.2 (2010), pp. 1195–1210.
+
+\noindent[22]\:Bradley Voytek et al. ``A method for event-related phase/amplitude coupling”. In: \textit{Neuroimage} 64 (2013), pp. 416–424.
+
+\noindent[23]\:Dixin Wang et al. ``Analysis of altered brain dynamics during episodic recall and detection of generalized anxiety disorder”. In: \textit{Neuroscience} 524 (2023), pp. 37–51.
+
+\noindent[24]\:Qian Cui et al. ``Disrupted dynamic local brain functional connectivity patterns in generalized anxiety disorder”. In: \textit{Progress in Neuro-Psychopharmacology and Biological Psychiatry} 99 (2020), p. 109833.
+
+\noindent[25]\:Chad M Sylvester et al. ``Functional network dysfunction in anxiety and anxiety disorders”. In: \textit{Trends in neurosciences} 35.9 (2012), pp. 527–535.
+
+
+\vspace{4mm} 
+
+\noindent {\bf Comment 2.3:} ``{\it The existing limitations only mention the singularity of frequency bands and datasets. It is suggested to add discussions on the sensitivity of TE calculation to noise and the stability of CFCDBN in small samples.
+}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 2.3:} 
+
+We appreciate the insightful comment of the reviewer. In response, we have expanded the discussion on the limitations of our approach to address additional concerns regarding the sensitivity of TE calculations to noise and the stability of our CFCDBN framework in small sample sizes. 
+
+\textbf{(1)} Sensitivity of TE Calculation to Noise:
+As a tool for quantifying directional information flow, Transfer Entropy (TE) is particularly vulnerable to noise interference under low signal-to-noise ratio conditions, which can compromise the accuracy of causal relationship estimation. To address this challenge, we employ several noise reduction strategies, including data preprocessing steps such as filtering and artifact removal, to enhance the robustness of TE calculations. Furthermore, to ensure the reliability and validity of each TE value, we conducted significance testing using 200 surrogate data and retained only significant connections at a significance level of alpha = 0.05. This strategy effectively strengthened the robustness of the results and ensured the reliability of causal relationships. Through these measures, we have made every effort to minimize the impact of noise on TE estimation, thereby enhancing the credibility and stability of the analysis results.
+
+\textbf{(2)} Stability of CFCDBN in Small Samples:
+We understand the reviewer’s concern regarding the stability of CFCDBN in small samples. While we have not specifically addressed this issue in our current study, we acknowledge that small sample sizes can indeed limit the stability and generalizability of the model. We plan to investigate the impact of small sample sizes on model performance in future work, potentially through simulations and statistical validation. Furthermore, in response to this concern, we have reviewed relevant EEG literature that applies TE method. For example, Neda Sanjari et al. applied Granger causality (GC), TE, Partial Directed Coherence (PDC) for Depth of Anesthesia (DOA) estimation with 8 subjects, finding that TE was effective in distinguishing anesthetic states even with small sample sizes, outperforming other connectivity metrics [*1]. Similarly, Raul Vicente et al. tested the validity of TE in quantifying nonlinear causality with simulated data and MEG recordings, demonstrating that TE is a robust method for measuring effective connectivity and shows low false-positive rates even with limited samples [*2]. These results reinforce our confidence that TE maintains a reasonable level of stability and provides reliable estimates of effective connectivity in electrophysiological signals, even in small sample settings.
+
+
+The corresponding revisions have been incorporated into the \textbf{LIMITAION} section (see \textbf{lines 953–956} in Manuscript with tracked changes), and the modified text is highlighted with underlining as shown below.
+
+``Although the proposed CFCDBN framework offers a new
+structured approach for analyzing cross-frequency neural interactions
+in adolescents with AD, several limitations should
+be noted. This study focuses on delta–beta interactions, a
+neural marker frequently linked to anxiety, but does not
+consider other frequency pairs (e.g., theta–gamma) or alternative
+coupling forms such as phase–phase (PPC) and amplitude–
+amplitude coupling (AAC), which may uncover additional
+anxiety-related mechanisms. Future work will extend the
+framework to include diverse coupling modes and frequency
+pairings, potentially improving the characterization of oscillatory
+dysregulation and informing more targeted neuromodulation
+strategies. In addition, the model has been validated only
+on a single adolescent dataset, limiting its generalizability and
+the breadth of mechanistic insight. Further studies involving more heterogeneous cohorts, particularly adults and clinically defined subtypes, are needed to evaluate the robustness and applicability of the framework. \uline{In addition, simulated data sets and large-scale data sets will be provided to further assess the sensitivity of directed connectivity to noise and to evaluate the stability of the framework in different sample sizes.}"
+
+\vspace{1mm}
+
+\noindent \textbf{Reference to Comment 2.3:} 
+
+\noindent(Note: \textit{``[*]'' refers to the reference number used in this response, while ``[ ]'' refers to the reference number in the manuscript.})
+
+\noindent[*1]\:Neda. Sanjari et al. ``Assessment of anesthesia depth using effective brain connectivity based on transfer
+entropy on eeg signal”. In: \textit{Basic and clinical neuroscience.} vol. 12, no. 2, p. 269, 2021.
+
+\noindent[*2]\:Raul. Vicente et al. ``Transfer entropy—a model-free measure of effective connectivity for the
+neurosciences”. In: \textit{Journal of computational neuroscience.} vol. 30, no. 1, pp. 45–67, 2011.
+
+
+
+\newpage
+\clearpage
+\begin{center}
+\underline{Responses to Comments of Reviewer 3}
+\end{center}
+
+\vspace{4mm} %增加上方间距
+\noindent {\bf Comment 3.1:} ``{\it The author evaluated three classical GNN architectures (GCN, GAT, and GraphSAGE) in the study. However, recent advances such as Graphormer have demonstrated superior performance in various tasks. It is recommended that the authors consider incorporating these more recent and competitive GNN models in their experiments to strengthen the evaluation.}''
+\vspace{1mm}  %增加评论与回复之间的间距
+
+\noindent {\bf Response to Comment 3.1:} 
+
+We sincerely thank the reviewer for this valuable suggestion. In the initial version of our manuscript, we deliberately employed well-established and widely validated baseline methods, including transfer entropy (TE) for constructing directed brain networks and three classical GNN architectures (GCN, GAT, and GraphSAGE) for graph-based classification. This choice was motivated by the primary aim of our study, which was to establish a novel data-driven framework (CFCDBN) for uncovering the propagation rules of oscillatory coupling signals and identifying key brain regions in anxiety disorder. To the best of our knowledge, no prior work had performed directional connectivity analysis directly on dynamic coupling sequences. Therefore, in this first step, our priority was to rigorously validate the fundamental feasibility and stability of the framework, where classical and widely used models ensured interpretability and comparability of the results.
+
+We fully acknowledge that each module of the proposed framework can, in principle, be replaced by more advanced or customized approaches, and we are grateful for the constructive suggestion of the reviewer in this regard. Based on the reviewer's suggestion, we have expanded the scope of our experiments in the revised manuscript to include \textbf{Graphormer} (\url{https://github.com/Microsoft/Graphormer})[63] [64] and \textbf{PNA (Principal Neighborhood Aggregation)} [65], two state-of-the-art GNN models. We would like to thank the authors for making their implementations publicly available. These additional analyses further strengthen the evaluation of our framework. 
+
+For \textbf{Graphormer}, we recognize that the model is built upon the standard Transformer architecture and has demonstrated competitive performance in large-scale graph representation learning tasks, such as the OGB benchmark challenges [*1]. Its key innovation lies in integrating graph structural priors into the Transformer framework to enhance representation learning. In this study, we adapt the official \textit{fairseq}-based implementation of Graphormer based on our understanding and further draw inspiration from the PyTorch \textit{Geometric} implementation provided at (\url{https://github.com/leffff/graphormer-pyg})
+, enabling the model to better accommodate the data format of our task. To achieve a balance between computational efficiency and expressive power, we configure the model with $L=2$ layers, a hidden dimension of $d=64$, four attention heads in the attention module, and an edge feature dimension of $16$, and train it \textit{without pre-training}.
+
+For \textbf{PNA}, the model extends conventional GNNs by combining multiple statistical aggregators (mean, max, min, standard deviation) with degree-based scalers that adjust messages according to node degrees. This design enables the network to capture heterogeneous neighborhood structures more effectively. In our study, we implement a two-layer PNA architecture, where each PNAConv layer applies the above aggregation–scaling scheme, followed by ReLU activation and dropout for regularization. A global mean pooling then summarizes node embeddings into a graph-level representation, which is fed into a fully connected layer for the final classification.
+The updated experimental results are summarized in TABLE~\ref{tab:evaluation_comparison}, and the corresponding revisions have been incorporated into the \textbf{RESULTS} section (see \textbf{lines 682–689} in Manuscript with tracked changes). The modified text is highlighted with underlining as shown below.
+
+\uline{``Based on this graph representation, we implement both standard GNN baselines, including GCN, GSAGE [58], GIN [54] and GAT [57], and our proposed variants DA-GCN, DA-GSAGE, and DA-GAT, which incorporate a direction-aware design for graph-level classification. In addition, we compare our framework with two state-of-the-art GNN models, Graphormer [63] [64] and PNA [65], to further evaluate its performance against advanced architectures.}"
+
+\begin{table}[htbp]
+\centering
+\caption{Performance Comparison of AD Detection}
+\label{tab:evaluation_comparison}
+\renewcommand{\arraystretch}{1.3}
+\scalebox{0.85}{ 
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Method} & \textbf{ACC (\%)} & \textbf{SEN (\%)} & \textbf{SPE (\%)} & \textbf{F1 (\%)} \\
+\midrule
+SVM [66]         & 67.3 ± 1.2  & 66.6 ± 0.8 & 69.3 ± 0.8  & 67.8 ± 0.9 \\
+CNN          & 68.9 ± 2.0  & 65.8 ± 3.7 & 67.6 ± 2.5  & 67.2 ± 3.1 \\
+GIN [54]          & 73.2 ± 2.3  & 73.7 ± 2.9 & 72.6 ± 1.4  & 72.1 ± 0.8 \\
+\uline{PNA} [65]    & 74.7 ± 4.1  & 75.5 ± 3.9 & 74.1 ± 4.5  & 73.6 ± 3.9 \\
+\uline{Graphormer} [63] [64]   & 71.3 ± 3.9  & 73.6 ± 4.2 & 69.8 ± 4.2  & 70.5 ± 4.3 \\
+GCN [56]        & 72.9 ± 1.1  & 73.8 ± 1.8 & 68.2 ± 2.5  & 69.2 ± 2.1 \\
+GSAGE [58]       & 74.0 ± 2.4  & 70.2 ± 3.6 & 72.4 ± 2.7  & 73.3 ± 2.5 \\
+GAT [57]         & 76.7 ± 3.2  & 73.0 ± 2.8 & 76.7 ± 2.9  & 75.6 ± 2.6 \\
+D-GCN (ours)        & 74.7 ± 1.9  & \textbf{76.7 ± 1.4}  & 71.3 ± 2.9  & 74.7 ± 1.2 \\
+D-GSAGE (ours)        & 75.5 ± 2.9  & 73.4 ± 3.3 & 75.8 ± 2.8  & 72.6 ± 3.0 \\
+D-GAT (ours)    & \textbf{77.8 ± 2.2} & 76.0 ± 2.6 & \textbf{78.2 ± 3.0} & \textbf{76.9 ± 2.9} \\
+\bottomrule
+\end{tabular}
+}
+\vspace{1mm}
+\end{table}
+
+We appreciate the reviewer’s suggestion to include additional advanced models in our comparison. As shown in the revised experiments, the Graphormer and PNA models did not achieve the highest classification performance. A likely explanation is that our dataset is relatively small, whereas these advanced architectures are typically designed to leverage large-scale training data for effective representation learning and generalization. This observation also highlights the importance of aligning model complexity with data availability and suggests that lightweight models may remain competitive in small-sample scenarios. Due to practical constraints, it was not feasible to incorporate all competitive GNN models within the current revision. We plan to investigate additional state-of-the-art GNN architectures in future work to further strengthen the evaluation and provide broader insights into the applicability of the proposed framework.
+
+\vspace{1mm}
+
+\noindent \textbf{Reference to Comment 3.1:} 
+
+\noindent(Note: \textit{``[*]'' refers to the reference number used in this response, while ``[ ]'' refers to the reference number in the manuscript.})
+
+\noindent[*1]\:W. Hu et al. ``Ogb-lsc: A large-scale challenge for machine learning on graphs”. In: \textit{arXiv preprint arXiv:}2103.09430, 2021.
+
+\noindent[54]\:Keyulu Xu et al. ``How powerful are graph neural
+networks?”. In: \textit{arXiv preprint arXiv:}1810.00826 (2018).
+
+\noindent[56]\:Thomas N Kipf and Max Welling. ``Semi-supervised
+classification with graph convolutional networks”. In:
+\textit{arXiv preprint arXiv}:1609.02907 (2016).
+
+\noindent[57]\:Veli{\v{c}}kovi{\'c} et al. ``Graph attention networks”. In:
+\textit{arXiv preprint arXiv:}1710.10903 (2017).
+
+\noindent[58]\:Will Hamilton, Zhitao Ying, and Jure Leskovec. ``Inductive
+representation learning on large graphs”. In:
+\textit{Advances in Neural Information Processing Systems} 30
+(2017).
+
+\noindent[63]\:Yu Shi et al. ``Benchmarking Graphormer on Large-
+Scale Molecular Modeling Datasets”. In: \textit{arXiv preprint
+arXiv:}2203.04810 (2022).
+
+\noindent[64]\:Chengxuan Ying et al. ``Do Transformers Really Perform
+Badly for Graph Representation?”. In: \textit{Thirty-Fifth
+Conference on Neural Information Processing Systems}.
+2021.
+
+\noindent[65]\:Gabriele Corso et al. ``Principal neighbourhood aggregation
+for graph nets”. In: \textit{Advances in Neural Information
+Processing Systems.} 33 (2020), pp. 13260–13271.
+
+\noindent[66]\:Thorsten Joachims. \textit{Making large-scale SVM learning
+practical.} Tech. rep. Technical report, 1998.
+
+
+
+\vspace{4mm}
+
+\noindent {\bf Comment 3.2:} ``{\it In Table III, the author should ensure a relatively fair comparison by using the same effective connectivity input method across all models.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 3.2:}  
+We sincerely appreciate the reviewer’s valuable feedback and fully understand the concern regarding fair comparison. We would like to clarify that using the same effective connectivity input method across all models currently presents certain objective limitations, which we will explain below.
+
+First, the HBN dataset differs substantially from widely adopted benchmark datasets such as SEED or DEAP, which are commonly used in affective computing studies and provide clearly defined labels and fixed data splits [*1]. In contrast, the HBN dataset is primarily intended for studies on medical mechanisms and computer-assisted analysis. As summarized in the ``Subjects" section of Table III, previous studies on anxiety patients have employed various grouping criteria, making it difficult to establish consistent subject indices and limiting the feasibility of exact replication.
+
+Second, many related studies have used customized integrated frameworks that combine feature analysis and classification, rather than isolating the classification component for direct comparison. For instance, the \textbf{K-GSCCA} framework was developed specifically for EEG and eye-tracking features, rather than functional connectivity analysis [75]. Furthermore, these models were not designed to handle directional connectivity inputs, and their source codes are not publicly available. As a result, it is technically challenging to re-implement these models using a unified effective connectivity representation.
+
+Therefore, TABLE~\ref{tab:Comparison} provides a comparative summary of the different methodological frameworks and their reported performance on the HBN dataset. In the revised manuscript, we have clearly outlined the input types and model architectures used in the reference studies, along with the corresponding classification results as reported. This ensures transparency and allows readers to interpret the performance differences in light of the varying input modalities and modeling strategies. Additionally, we have updated the title of Table III to ``Evaluation of Optimal Classification Performance Across Research Frameworks on the HBN Anxiety Dataset" to avoid potential misinterpretation. The updated table is incorporated in the \textbf{RESULTS} section (see \textbf{Table~III} in manuscript).
+
+
+\begin{table*}[ht]
+\centering
+\begin{minipage}{\textwidth}
+\caption{Evaluation of Optimal Classification Performance Across Research Frameworks on the HBN Anxiety Dataset}
+\label{tab:Comparison}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{clclcccc}
+\toprule
+\textbf{Category} & \textbf{Framework name} & \textbf{Subjects (AD/HC)} & \textbf{Type of Input Data} & \textbf{ACC (\%)} & \textbf{SEN (\%)} & \textbf{SPE (\%)} & \textbf{Interpretability} \\
+\midrule
+          & GSCCA\_JF + SVM [72]         & 62/72  & Functional Connectivity    & 80.8 & \textbf{88.9} & 72.4 & \checkmark \\
+          & GSCCA(Fre)+SVM                              & 62/72     & Functional Connectivity    & 77.8 & 71.4 & 84.1 & -- \\
+          & GSCCA(Time)+SVM                             & 62/72     & Functional Connectivity    & 66.7 & 71.4 & 61.9 & -- \\
+Competing & EEMD+SVM [73]        & 39/39  & Functional Connectivity    & 87.3 & 88.5 & \textbf{86.1} & -- \\
+          & GSCCA + SVM [74]          & 45/47  & EEG and Eye Features       & 82.7 & 79.8 & 83.0 & \checkmark \\
+          & GSCCA + KNN                                 & 45/47     & EEG and Eye Features       & 78.6 & 80.2 & 76.9 & -- \\
+          & K-GSCCA [75]               & 45/47  & EEG and Eye Features       & \textbf{87.5} & --   & --   & -- \\  
+\cmidrule(lr){1-8}
+          & CFCDBN+DA-GAT        & 40/40  & Effective Connectivity     & \textbf{82.1} & \textbf{79.6} & \textbf{82.8} & \checkmark \\
+Proposed  & CFCDBN+DA-GCN        & 40/40  & Effective Connectivity     & 80.4 & 78.7 & 75.9 & -- \\
+          & CFCDBN+DA-GSAGE      & 40/40  & Effective Connectivity     & 81.2 & 79.5 & 80.4 & -- \\
+\bottomrule
+\end{tabular}
+}
+\vspace{0.5em}
+{\footnotesize \textit{Note:} “--” indicates missing values. “\checkmark” indicates that the model includes interpretability analysis. Bold values highlight the best performance within the respective group (Competing or Proposed).}
+\label{tab:hbn_comparison}
+\end{minipage}
+\end{table*}
+
+\vspace{1mm}
+
+\noindent \textbf{Reference to Comment 3.2:} 
+
+\noindent(Note: \textit{``[*]'' refers to the reference number used in this response, while ``[ ]'' refers to the reference number in the manuscript.})
+
+\noindent[*1]\:Yuxiao Geng et al. ``Deep learning-based eeg emotion recognition: a comprehensive review”. \textit{Neural Computing and
+Applications.} vol. 37, no. 4, pp. 1919–1950, 2025.
+
+\noindent[72]\:Cancheng Li et al. ``Fusing Joint Features of Eeg Brain
+Functional Connectivity Networks for Anxiety Recognition”.
+In:\textit{ 2023 IEEE 20th International Symposium
+on Biomedical Imaging.} IEEE. 2023, pp. 1–5. 
+
+\noindent[73]\:Bingtao Zhang et al. ``Functional brain network based
+on improved ensemble empirical mode decomposition
+of EEG for anxiety analysis and detection”. In:\textit{ Biomedical
+Signal Processing and Control} 91 (2024), p. 106030.
+
+\noindent[74]\:Xiaowei Zhang et al. ``Fusing of electroencephalogram
+and eye movement with group sparse canonical correlation
+analysis for anxiety detection”. In: \textit{IEEE Transactions
+on Affective Computing} 13.2 (2020), pp. 958–971.
+
+\noindent[75]\:Zhihua Guo et al. ``Anxiety detection with nonlinear
+group correlation fusion of electroencephalogram and
+eye movement”. In: \textit{2020 IEEE International Conference
+on Bioinformatics and Biomedicine (BIBM).} IEEE.
+2020, pp. 2596–2602.
+
+
+\vspace{4mm}
+\newpage
+
+\noindent {\bf Comment 3.3:} ``{\it The constructed EC brain network seems to be a fully connected graph. Why not sparsify it? How to solve redundant or noisy information caused by redundant edges.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 3.3:} 
+We sincerely appreciate the reviewer’s professional and insightful comments. Regarding the reviewer’s question about why the effective connectivity (EC) brain network is not sparsified, we understand the main concern, which is to improve the model’s efficiency by removing redundant edges and to reduce the noise introduced by such edges. In this study, we chose to retain the fully connected EC network for the following two reasons:
+
+First, while redundancy removal (e.g., thresholding or sparsification) can indeed improve numerical stability, it may also introduce bias, especially when the optimal threshold or sparsity level for the novel network representation proposed in this study has not yet been determined. The core goal of our research is to explore the directional analysis of dynamic cross-frequency coupling as an emerging scientific issue, using a transparent and reproducible baseline framework. Therefore, we opted to use simple and well-established methods, such as TE and PTE, to avoid additional optimization steps that might influence the interpretation of results, ensuring the reproducibility of the study.
+
+Second, considering the complexity and dynamic nature of the current EC network, our focus is on studying its basic validity and feasibility rather than pursuing the highest performance through algorithmic improvements. We recognize that redundancy removal is indeed a valuable direction for future research. For example, in time-series causal discovery, A. Tank et al. proposed a neural Granger optimization method that ensures the sparsity of the causal graph through structured penalties such as group lasso (GROUP), mixed group lasso (MIXED), and hierarchical lasso (HIER) [*1]. In future studies, we plan to explore structured sparsification strategies (e.g., group sparsity or adaptive edge pruning) from an algorithmic optimization perspective to further improve the model’s efficiency and interpretability.
+
+\noindent \textbf{Reference to Comment 3.3:} 
+
+\noindent(Note: \textit{``[*]'' refers to the reference number used in this response, while ``[ ]'' refers to the reference number in the manuscript.})
+
+\noindent[*1]\:Tank Alex et al. ``Neural granger causality,” \textit{IEEE Transactions on Pattern Analysis and Machine Intelligence}. vol. 44, no. 8, pp. 4267–4279, 2021.
+
+
+
+\vspace{4mm}
+
+\noindent {\bf Comment 3.4:} ``{\it It remains unclear how the 34 ROIs were selected and subsequently mapped to the five fixed network patterns. Additionally, the authors should clarify which brain atlas was used to define or divide these ROIs.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 3.4:}
+
+We sincerely appreciate the reviewer’s valuable feedback, which helps us further clarify our methodological choices. Regarding the questions raised, we would like to address them as follows:
+
+The regions of interest (ROIs) were selected based on the widely used AAL (Automated Anatomical Labeling) template, a well-established and widely recognized brain atlas for defining functional and anatomical brain regions [*1]. The AAL template includes predefined regions that are frequently utilized in neuroimaging studies for functional connectivity analysis. Specifically, we used the AAL (116-regions) anatomical template, which provides a comprehensive set of brain regions that are standardized and commonly applied in neuroimaging research.
+
+Regarding the selection of the 34 ROIs, we have provided a detailed explanation \textbf{RESULTS (D. Evaluating Directional Information Flow in Brain Networks for AD Classification and Interpretability Analysis)} section (see \textbf{lines 590-596} in Manuscript with tracked changes). The identification of these ROIs was based on consistent findings from previous neuroimaging studies on anxiety disorders and related conditions, ensuring their scientific validity and alignment with existing literature. Several prior neuroimaging studies were considered as prior knowledge in this selection process, with the primary reference being the 2025 paper ”\textit{Resting-state functional connectivity in anxiety disorders: a multicenter fMRI study}“, published in \textit{Molecular Psychiatry} [*2]. The supplementary materials of this paper provide a detailed outline of the criteria for selecting relevant ROIs for anxiety disorders, which served as a key reference in our own ROI selection process.
+
+Regarding the mapping between anatomical ROIs and the five predefined large-scale functional networks define by [*3], namely the Default Mode Network (DMN), Salience Network (SN), Frontoparietal Network (FPN), Dorsal Attention Network (DAN), and Sensorimotor Network (SMN), we acknowledge that there is currently no universally accepted “gold standard”. To ensure transparency and reproducibility, we primarily followed the network allocation methods reported in \textbf{Table 1} of [*4] and \textbf{Table S5} of [*5], while also considering the results from several other references [*6] [*7] [*8] [*9] [*10] [*11] [*12]. The generated mapping is now provided in \textbf{TABLE III}, and the related description has been included in \textbf{supplementary materials}.
+
+Furthermore, the correspondence between functional and anatomical regions can be established through MNI space coordinates by aligning the spatial coordinates of the centers of each anatomical and functional region, based on their spatial overlap. The corresponding pseudocode is provided in Algorithm 1.
+
+\begin{algorithm}
+\caption{Mapping ROIs to Yeo7 Networks}
+\begin{algorithmic}[1]
+\State \textbf{Input:} Paths to Yeo7 and AAL data files
+\State \textbf{Output:} Network assignment for each ROI
+
+\State \texttt{Load YeoData, AALData}
+
+\State \texttt{Initialize ROINetwork as a 116x7 matrix of zeros}
+
+\For{ROI = 1 to 116}
+    \For{iNetwork = 1 to 7}
+        \State \texttt{Temp = count of voxels in YeoData corresponding to network iNetwork for ROI}
+        \State \texttt{ROINetwork[ROI, iNetwork] = Temp}
+    \EndFor
+\EndFor
+
+\State \texttt{MaxNumber, YeoNetwork = max(ROINetwork, axis=2)}
+
+\State \textbf{Return} MaxNumber, YeoNetwork
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{table}[htbp]
+\centering
+\caption{Brain regions and their corresponding RSNs}
+\begin{tabular}{ccc}
+\toprule
+\textbf{Node} & \textbf{Region(AAL)} & \textbf{RSNs} \\
+\midrule
+1  & Hippocampus\_L        & Default Mode Network (DMN) \\
+2  & Hippocampus\_R        & Default Mode Network (DMN) \\
+3  & Frontal\_Sup\_Medial\_L & Default Mode Network (DMN) \\
+4  & Frontal\_Sup\_Medial\_R & Default Mode Network (DMN) \\
+5  & Precuneus\_L          & Default Mode Network (DMN) \\
+6  & Precuneus\_R          & Default Mode Network (DMN) \\
+7  & Angular\_L            & Default Mode Network (DMN) \\
+8  & Angular\_R            & Default Mode Network (DMN) \\
+9  & Cingulum\_Post\_L     & Default Mode Network (DMN) \\
+10 & Cingulum\_Post\_R     & Default Mode Network (DMN) \\
+11 & Insula\_L             & Salience Network (SN) \\
+12 & Insula\_R             & Salience Network (SN) \\
+13 & Cingulum\_Ant\_L      & Salience Network (SN) \\
+14 & Cingulum\_Ant\_R      & Salience Network (SN) \\
+15 & Amygdala\_L           & Salience Network (SN) \\
+16 & Amygdala\_R           & Salience Network (SN) \\
+17 & Thalamus\_L           & Salience Network (SN) \\
+18 & Thalamus\_R           & Salience Network (SN) \\
+19 & Frontal\_Mid\_L       & Frontoparietal Network (FPN) \\
+20 & Frontal\_Mid\_R       & Frontoparietal Network (FPN) \\
+21 & Parietal\_Inf\_L      & Frontoparietal Network (FPN) \\
+22 & Parietal\_Inf\_R      & Frontoparietal Network (FPN) \\
+23 & Frontal\_Inf\_Tri\_L  & Frontoparietal Network (FPN) \\
+24 & Frontal\_Inf\_Tri\_R  & Frontoparietal Network (FPN) \\
+25 & Frontal\_Sup\_L       & Dorsal Attention Network (DAN) \\
+26 & Frontal\_Sup\_R       & Dorsal Attention Network (DAN) \\
+27 & Parietal\_Sup\_L      & Dorsal Attention Network (DAN) \\
+28 & Parietal\_Sup\_R      & Dorsal Attention Network (DAN) \\
+29 & Postcentral\_L        & Sensorimotor Network (SMN) \\
+30 & Postcentral\_R        & Sensorimotor Network (SMN) \\
+31 & Precentral\_L         & Sensorimotor Network (SMN) \\
+32 & Precentral\_R         & Sensorimotor Network (SMN) \\
+33 & Supp\_Motor\_Area\_L  & Sensorimotor Network (SMN) \\
+34 & Supp\_Motor\_Area\_R  & Sensorimotor Network (SMN) \\
+\bottomrule
+\end{tabular}
+\end{table}
+\clearpage
+
+\vspace{1mm}
+
+\noindent \textbf{Reference to Comment 3.4:} 
+
+\noindent[*1]\:Nathalie Tzourio-Mazoyer et al. ``Automated anatomical
+labeling of activations in SPM using a macroscopic
+anatomical parcellation of the MNI MRI single-subject
+brain”. In: \textit{Neuroimage} 15.1 (2002), pp. 273–289.
+
+\noindent[*2]\:Till Langhammer et al. ``Resting-state functional connectivity
+in anxiety disorders: a multicenter fMRI
+study”. In: \textit{Molecular Psychiatry} 30.4 (2025), pp. 1548–
+1557.
+
+\noindent[*3]\:BT Thomas Yeo et al. ``The organization of the human
+cerebral cortex estimated by intrinsic functional connectivity”.
+In: \textit{Journal of Neurophysiology} (2011).
+
+\noindent[*4]\:Yu Takagi et al. ``A common brain network among
+state, trait, and pathological anxiety from whole-brain
+functional connectivity”. In: \textit{Neuroimage} 172 (2018),
+pp. 506–516.
+
+\noindent[*5]\:Huili Sun et al. ``Brain age prediction and deviations
+from normative trajectories in the neonatal connectome”.
+In: \textit{Nature communications} 15.1 (2024),
+p. 10251.
+
+\noindent[*6]\:Weiyuan Huang et al. ``Mapping white matter structural
+and network alterations in betel quid-dependent chewers
+using high angular resolution diffusion imaging”. In:
+\textit{Frontiers in Psychiatry} 13 (2022), p. 1036728.
+
+
+\noindent[*7]\:Liqun Kuang et al. ``Default mode network analysis
+of APOE genotype in cognitively unimpaired subjects
+based on persistent homology”. In: \textit{Frontiers in Aging
+Neuroscience} 12 (2020), p. 188.
+
+
+\noindent[*8]\:Susanne Passow et al. ``Default-mode network functional
+connectivity is closely related to metabolic activity”.
+In: \textit{Human Brain Mapping} 36.6 (2015), pp. 2027–
+2038.
+
+
+\noindent[*9]\:Caterina A Pedersini et al. ``Functional interactions in
+patients with hemianopia: A graph theory-based connectivity
+study of resting fMRI signal”. In: \textit{PLoS One}
+15.1 (2020), e0226816.
+
+\noindent[*10]\:Matthew L Dixon et al. ``Heterogeneity within the
+frontoparietal control network and its relationship to the
+default and dorsal attention networks”. In: \textit{Proceedings
+of the National Academy of Sciences} 115.7 (2018),
+E1598–E1607.
+
+\noindent[*11]\:Simone Vossel, Joy J Geng, and Gereon R Fink. ``Dorsal
+and ventral attention systems: distinct neural circuits but
+collaborative roles”. In: \textit{The Neuroscientist} 20.2 (2014),
+pp. 150–159.
+
+\noindent[*12]\:Sneha Chenji et al. ``Investigating default mode and sensorimotor
+network connectivity in amyotrophic lateral
+sclerosis”. In: \textit{PloS one} 11.6 (2016), e0157443.
+
+
+
+\newpage
+
+\vspace{4mm}
+
+\noindent {\bf Comment 3.5:} ``{\it The parameter settings for transfer entropy are not clearly described. In particular, it is important to specify key parameters such as the time delay used in the computation.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 3.5:} 
+
+We thank the reviewer for raising this important point. In response, we have provided a more comprehensive description of the transfer entropy (TE) computation and the key parameters involved, and have made the corresponding modifications and additions in the manuscript.
+
+Directed connectivity was estimated using the MuTE MATLAB toolbox (Montalto et al., 2014 [*1], available at \url{https://github.com/montaltoalessandro/MuTE}). specifically adopting the BINNUE method. This method combines a binned probability estimator (BIN) with non-uniform embedding (NUE), which has been demonstrated to achieve an optimal balance between computational efficiency and estimation accuracy in multivariate TE analysis. For the TE computation, all selected ROIs were analyzed at a sampling rate of 30 Hz. A model order of 5 was selected, corresponding to a 0.167-second history window, to account for delayed dependencies between the driving and target signals. This time window was chosen based on previous studies indicating that large-scale EEG microstate dynamics typically evolve at intervals of 80–120 ms [*2]. Given this, we believe that a temporal resolution of approximately 33 ms (i.e., 30 Hz) is sufficient to capture the macroscopic dynamics of information flow. Probability distributions were estimated using six quantization levels, leveraging non-uniform entropy estimation. Statistical significance was evaluated using 200 surrogate datasets, with connections retained at a significance threshold of  $\alpha$ = 0.05. To ensure strict causal directionality, present-time values were excluded from the embedding, and no scalp conduction correction was applied in the analysis.
+
+In response to the suggestion provided by Reviewer 1, we have newly incorporated the computation of Phase Transfer Entropy (PTE) as an additional analysis in our study. For the detailed parameter settings of PTE computation, we followed the configurations reported in previous studies [*3][*4][*5][*6][*7]. 
+
+In the analysis of predictive information flow, the bin width of the phase histograms was determined as $3.49 \times \mathrm{STD} \times M^{-1/3}$, where $\mathrm{STD}$ denotes the standard deviation of the phase time series $\{x_t^p\}$ and $M$ represents the number of sign changes within the phase variation interval. The prediction delay $\tau$ was set to $2M/M_\pm$, with $M_\pm$ indicating the number of zero crossings in the phase series. It is worth noting that PTE is relatively robust to the choice of $\tau$, and moderate adjustments of the bin width or delay parameter do not substantially alter the results. The specific implementation of the PTE algorithm was adapted from the MATLAB code provided in [*6] (\url{https://github.com/scsnl/Das_Cortex_2021}). These details have been included in the \textbf{supplementary materials} to enhance transparency and reproducibility of the results.
+
+
+The corresponding revisions have been incorporated into the \textbf{MATERIALS AND METHOD (E. Construction of CFC-based directed brain network \textit{(5) Construction of the CFCDBN)}} section (see \textbf{lines 424–427} in Manuscript with tracked changes).
+
+\vspace{1mm}
+
+\noindent \textbf{Reference to Comment 3.5:} 
+
+\noindent(Note: \textit{``[*]'' refers to the reference number used in this response, while ``[ ]'' refers to the reference number in the manuscript.})
+
+\noindent[*1]\:Alessandro Montalto, Luca Faes, and Daniele Marinazzo.
+``MuTE: a MATLAB toolbox to compare established
+and novel estimators of the multivariate transfer
+entropy”. In: \textit{PloS one} 9.10 (2014), e109462.
+
+\noindent[*2]\:Arjun Khanna et al. ``Microstates in resting-state EEG: current status and future directions”. In: \textit{Neuroscience \& Biobehavioral Reviews} 49 (2015), pp. 105–113.
+
+\noindent[*3]\:Anup Das and Vinod Menon. ``Spatiotemporal integrity
+and spontaneous nonlinear dynamic properties of the
+salience network revealed by human intracranial electrophysiology:
+a multicohort replication”. In: \textit{Cerebral
+Cortex} 30.10 (2020), pp. 5309–5321.
+
+
+\noindent[*4]\:Anup Das, Carlo de Los Angeles, and Vinod Menon.
+``Electrophysiological foundations of the human defaultmode
+network revealed by intracranial-EEG recordings
+during resting-state and cognition”. In: \textit{Neuroimage} 250
+(2022), p. 118927.
+
+\noindent[*5]\:Anup Das and Vinod Menon. ``Replicable patterns
+of causal information flow between hippocampus and
+prefrontal cortex during spatial navigation and spatial–
+verbal memory formation”. In: \textit{Cerebral Cortex} 32.23
+(2022), pp. 5343–5361.
+
+\noindent[*6]\:Das, Anup and Menon, Vinod. ``Causal dynamics
+and information flow in parietal-temporal-hippocampal
+circuits during mental arithmetic revealed by hightemporal
+resolution human intracranial EEG”. In: \textit{Cortex}
+147 (2022), pp. 24–40.
+
+\noindent[*7]\:Das, Anup and Menon, Vinod. ``Frequency-specific directed
+connectivity between the hippocampus and parietal
+cortex during verbal and spatial episodic memory:
+an intracranial EEG replication”. In: \textit{Cerebral Cortex}
+34.7 (2024), bhae287.
+
+
+
+\vspace{10mm}
+
+
+\begin{center}
+    {\large \textbf{Acknowledgments}} \\[3mm]
+    \begin{minipage}{0.9\textwidth}
+   \textit{  \textbf{Finally, we would like to express our sincere appreciation to the editors and anonymous reviewers for their invaluable time and effort spent in reviewing the manuscript. Their insightful and constructive comments have significantly contributed to enhancing both the clarity and quality of this manuscript.}}
+    \end{minipage}
+\end{center}
+\vspace{4mm}
+
+\newpage
+\clearpage
+\begingroup
+\let\uline\relax
+\endgroup
+
+\end{document}

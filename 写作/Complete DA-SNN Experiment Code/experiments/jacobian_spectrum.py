@@ -532,6 +532,12 @@ def _load_bundle_and_split(args):
     return bundle, np.asarray(train_idx, dtype=np.int64), np.asarray(val_idx, dtype=np.int64)
 
 
+def _selected_condition(args) -> tuple[str, bool]:
+    if args.no_dynamic_window:
+        return "Fixed Window", False
+    return "Adaptive Window", True
+
+
 def _warmup_model(model: nn.Module, loader: DataLoader, device: torch.device, max_batches: int = 3) -> None:
     model.train()
     with torch.no_grad():
@@ -552,6 +558,7 @@ def _build_model_and_loaders(args, use_dynamic_window, bundle, train_idx, val_id
             "use_dsgm": True,
             "use_ttfs_encoder": True,
             "use_dynamic_window": use_dynamic_window,
+            "spiking_hidden_dims": (args.hidden_width,) * args.hidden_depth,
         },
     )
     generator = torch.Generator()
@@ -629,6 +636,94 @@ def _summarize_jacobian_rows(rows: list[dict[str, object]]) -> list[dict[str, ob
                 summary[f"{metric}_{statistic}"] = distribution[statistic]
         summaries.append(summary)
     return summaries
+
+
+def _deepest_square_hidden_state(states: list[dict[str, object]]) -> dict[str, object] | None:
+    square_states = []
+    for state in states:
+        layer = state["layer"]
+        if getattr(layer, "outputLayer", False):
+            continue
+        kernel = layer.kernel
+        if kernel is None:
+            continue
+        if int(kernel.shape[0]) == int(kernel.shape[1]):
+            square_states.append(state)
+    return square_states[-1] if square_states else None
+
+
+def collect_square_jacobian_eigenvalues(
+    model: DA_SNN,
+    x_single: torch.Tensor,
+) -> tuple[str | None, np.ndarray | None]:
+    """Return the deepest square hidden-layer eigenvalues for one sample.
+
+    If the model has no square hidden layer, returns ``(None, None)``.
+    """
+    states = collect_spiking_stack_state(model, x_single)
+    square_state = _deepest_square_hidden_state(states)
+    if square_state is None:
+        return None, None
+    layer = square_state["layer"]
+    mask = square_state["mask"]
+    if mask is None:
+        return None, None
+    local = layer.kernel.transpose(0, 1).detach().clone()
+    local = local * mask.to(local.dtype).unsqueeze(1)
+    eigenvalues = np.linalg.eigvals(local.cpu().numpy().astype(np.float64, copy=False))
+    return layer.name, eigenvalues
+
+
+def collect_condition_square_spectra(
+    model: DA_SNN,
+    bundle,
+    selected_indices: np.ndarray,
+    device: torch.device,
+) -> tuple[str, np.ndarray]:
+    """Collect eigenvalues for the deepest square hidden layer across samples."""
+    spectra: list[np.ndarray] = []
+    layer_name: str | None = None
+    for sample_index in selected_indices:
+        sample = torch.as_tensor(bundle.features[int(sample_index)], dtype=torch.float32, device=device)
+        current_layer_name, eigenvalues = collect_square_jacobian_eigenvalues(model, sample)
+        if eigenvalues is None:
+            continue
+        layer_name = current_layer_name
+        spectra.append(np.asarray(eigenvalues))
+    if not spectra or layer_name is None:
+        raise ValueError("No square hidden layer was found for eigenvalue plotting.")
+    return layer_name, np.stack(spectra)
+
+
+def plot_square_jacobian_spectra(
+    spectra_by_condition: dict[str, np.ndarray],
+    layer_name: str,
+    save_dir: Path,
+) -> None:
+    """Plot complex eigenvalues of the deepest square hidden-layer Jacobian."""
+    colors = {"Fixed Window": "#2878B5", "Adaptive Window": "#D95319"}
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5), sharex=False, sharey=False)
+    theta = np.linspace(0.0, 2.0 * np.pi, 512)
+    for ax, condition in zip(axes, ("Fixed Window", "Adaptive Window")):
+        values = np.asarray(spectra_by_condition[condition], dtype=np.complex128).reshape(-1)
+        radius = max(1.1, float(np.max(np.abs(values))) * 1.05)
+        ax.scatter(values.real, values.imag, s=10, alpha=0.55, color=colors[condition], edgecolors="none")
+        ax.plot(np.cos(theta), np.sin(theta), color="black", linestyle="--", linewidth=1)
+        ax.axhline(0.0, color="#888888", linewidth=0.7)
+        ax.axvline(0.0, color="#888888", linewidth=0.7)
+        ax.set_aspect("equal", adjustable="box")
+        ax.set_xlim(-radius, radius)
+        ax.set_ylim(-radius, radius)
+        ax.set_title(
+            f"{condition} ({layer_name}, max |lambda|={float(np.max(np.abs(values))):.2f})"
+        )
+        ax.set_xlabel("Real eigenvalue component")
+    axes[0].set_ylabel("Imaginary eigenvalue component")
+    fig.suptitle("Square Jacobian eigenvalue scatter for fixed vs adaptive windows", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(save_dir / "square_jacobian_eigenvalues.png", dpi=300, bbox_inches="tight")
+    fig.savefig(save_dir / "square_jacobian_eigenvalues.pdf", bbox_inches="tight")
+    plt.close(fig)
 
 
 # ---------------------------------------------------------------------------
@@ -798,6 +893,7 @@ def run_jacobian_experiment(args) -> Path:
     device = _resolve_device(args.device)
     bundle, train_idx, val_idx = _load_bundle_and_split(args)
     selected_indices = _select_analysis_indices(val_idx, args.jacobian_samples, args.seed)
+    condition, use_dynamic_window = _selected_condition(args)
 
     artifact_names = [
         "jacobian_per_sample.csv",
@@ -808,76 +904,106 @@ def run_jacobian_experiment(args) -> Path:
         "run_manifest.json",
         "jacobian_gradient_stability.png",
         "jacobian_gradient_stability.pdf",
+        "square_jacobian_eigenvalues.npz",
+        "square_jacobian_summary.json",
     ]
     manifest: dict[str, object] = {
         "status": "running",
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "arguments": vars(args),
         "device": str(device),
+        "condition": condition,
+        "use_dynamic_window": use_dynamic_window,
         "stage_epochs": stage_epochs,
         "selected_validation_indices": selected_indices.tolist(),
         "artifacts": artifact_names,
         "jacobian_scope": "spike-time stack after encoder through logits",
         "spectrum_type": "singular values of per-sample full matrices",
         "interpretation": "empirical relative-conditioning diagnostic; not a stability guarantee",
+        "square_jacobian_scope": "deepest square hidden layer local Jacobian",
     }
     _write_json(run_dir / "run_manifest.json", manifest)
 
     all_jacobian_rows: list[dict[str, object]] = []
     all_singular_arrays: dict[str, np.ndarray] = {}
     all_gradient_summaries: list[dict[str, object]] = []
+    square_layer_name: str | None = None
+    square_spectra: np.ndarray | None = None
     gradient_path = run_dir / "gradient_per_batch.csv"
     with gradient_path.open("w", newline="", encoding="utf-8") as gradient_handle:
         gradient_writer = csv.DictWriter(gradient_handle, fieldnames=GRADIENT_FIELDS)
         gradient_writer.writeheader()
 
-        for condition, use_dynamic_window in CONDITIONS.items():
-            model, train_loader, _val_loader = _build_model_and_loaders(
-                args, use_dynamic_window, bundle, train_idx, val_idx, device
-            )
-            criterion = nn.CrossEntropyLoss()
-            optimizer = optim.Adam(model.parameters(), lr=args.lr)
+        model, train_loader, _val_loader = _build_model_and_loaders(
+            args, use_dynamic_window, bundle, train_idx, val_idx, device
+        )
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
-            stage_rows, stage_arrays = _analyze_stage(
-                model, bundle, selected_indices, condition, args.seed, 0, device
-            )
-            all_jacobian_rows.extend(stage_rows)
-            all_singular_arrays.update(stage_arrays)
+        stage_rows, stage_arrays = _analyze_stage(
+            model, bundle, selected_indices, condition, args.seed, 0, device
+        )
+        all_jacobian_rows.extend(stage_rows)
+        all_singular_arrays.update(stage_arrays)
 
-            for epoch in range(1, args.max_epochs + 1):
-                loss, accuracy, gradient_rows = train_one_epoch_instrumented(
-                    model,
-                    train_loader,
-                    criterion,
-                    optimizer,
-                    device,
-                    args.gamma_ttfs,
-                    condition=condition,
-                    seed=args.seed,
-                    epoch=epoch,
-                    gradient_log_every=args.gradient_log_every,
-                    max_batches=args.max_train_batches,
+        for epoch in range(1, args.max_epochs + 1):
+            loss, accuracy, gradient_rows = train_one_epoch_instrumented(
+                model,
+                train_loader,
+                criterion,
+                optimizer,
+                device,
+                args.gamma_ttfs,
+                condition=condition,
+                seed=args.seed,
+                epoch=epoch,
+                gradient_log_every=args.gradient_log_every,
+                max_batches=args.max_train_batches,
+            )
+            gradient_writer.writerows(gradient_rows)
+            gradient_handle.flush()
+            all_gradient_summaries.extend(_summarize_gradient_rows(gradient_rows))
+            print(
+                f"[{condition}] epoch {epoch}/{args.max_epochs}: "
+                f"loss={loss:.6f}, accuracy={accuracy:.4f}",
+                flush=True,
+            )
+            if epoch in stage_epochs:
+                stage_rows, stage_arrays = _analyze_stage(
+                    model, bundle, selected_indices, condition, args.seed, epoch, device
                 )
-                gradient_writer.writerows(gradient_rows)
-                gradient_handle.flush()
-                all_gradient_summaries.extend(_summarize_gradient_rows(gradient_rows))
-                print(
-                    f"[{condition}] epoch {epoch}/{args.max_epochs}: "
-                    f"loss={loss:.6f}, accuracy={accuracy:.4f}",
-                    flush=True,
-                )
-                if epoch in stage_epochs:
-                    stage_rows, stage_arrays = _analyze_stage(
-                        model, bundle, selected_indices, condition, args.seed, epoch, device
-                    )
-                    all_jacobian_rows.extend(stage_rows)
-                    all_singular_arrays.update(stage_arrays)
+                all_jacobian_rows.extend(stage_rows)
+                all_singular_arrays.update(stage_arrays)
+
+        square_layer_name, square_spectra = collect_condition_square_spectra(
+            model, bundle, selected_indices, device
+        )
 
     jacobian_summary = _summarize_jacobian_rows(all_jacobian_rows)
     _write_csv(run_dir / "jacobian_per_sample.csv", all_jacobian_rows)
     _write_csv(run_dir / "jacobian_summary.csv", jacobian_summary)
     np.savez_compressed(run_dir / "jacobian_singular_values.npz", **all_singular_arrays)
     _write_csv(run_dir / "gradient_per_epoch.csv", all_gradient_summaries)
+    if square_spectra is None:
+        raise RuntimeError("square Jacobian spectra were not collected")
+    np.savez_compressed(
+        run_dir / "square_jacobian_eigenvalues.npz",
+        eigenvalues=square_spectra,
+        condition=np.array(condition),
+        layer_name=np.array(square_layer_name or "square layer"),
+        selected_validation_indices=selected_indices,
+    )
+    _write_json(
+        run_dir / "square_jacobian_summary.json",
+        {
+            "condition": condition,
+            "layer_name": square_layer_name or "square layer",
+            "sample_count": int(square_spectra.shape[0]),
+            "values_per_sample": int(square_spectra.shape[1]) if square_spectra.ndim == 2 else 0,
+            "max_modulus": float(np.max(np.abs(square_spectra))),
+            "median_modulus": float(np.median(np.abs(square_spectra))),
+        },
+    )
     plot_stability_diagnostics(
         all_jacobian_rows,
         all_singular_arrays,
@@ -888,6 +1014,7 @@ def run_jacobian_experiment(args) -> Path:
     manifest["completed_at"] = datetime.now().isoformat(timespec="seconds")
     manifest["jacobian_record_count"] = len(all_jacobian_rows)
     manifest["gradient_summary_record_count"] = len(all_gradient_summaries)
+    manifest["square_jacobian_layer"] = square_layer_name or "square layer"
     _write_json(run_dir / "run_manifest.json", manifest)
     return run_dir
 
@@ -912,6 +1039,9 @@ def parse_args(argv: Sequence[str] | None = None):
     parser.add_argument("--jacobian-samples", type=int, default=32)
     parser.add_argument("--gradient-log-every", type=int, default=1)
     parser.add_argument("--max-train-batches", type=int, default=None)
+    parser.add_argument("--hidden-width", type=int, default=170)
+    parser.add_argument("--hidden-depth", type=int, default=4)
+    parser.add_argument("--no-dynamic-window", action="store_true")
     parser.add_argument("--feature-file", type=str, default=None)
     parser.add_argument(
         "--output-dir",
@@ -930,6 +1060,10 @@ def parse_args(argv: Sequence[str] | None = None):
         parser.error("--gradient-log-every must be at least 1")
     if args.max_train_batches is not None and args.max_train_batches < 1:
         parser.error("--max-train-batches must be at least 1")
+    if args.hidden_width < 1:
+        parser.error("--hidden-width must be at least 1")
+    if args.hidden_depth < 1:
+        parser.error("--hidden-depth must be at least 1")
     try:
         _parse_stage_epochs(args.stage_epochs, args.max_epochs)
     except (TypeError, ValueError) as exc:
@@ -947,6 +1081,8 @@ if __name__ == "__main__":
     print(f"  Protocol metadata: {cli_args.protocol}")
     print(f"  Seed: {cli_args.seed}")
     print(f"  Jacobian samples: {cli_args.jacobian_samples}")
+    print(f"  Spiking hidden stack: {cli_args.hidden_depth} layers x {cli_args.hidden_width} neurons")
+    print(f"  Dynamic window: {not cli_args.no_dynamic_window}")
     print(f"  Output root: {cli_args.output_dir}")
     completed_dir = run_jacobian_experiment(cli_args)
     print(f"Completed run: {completed_dir}")

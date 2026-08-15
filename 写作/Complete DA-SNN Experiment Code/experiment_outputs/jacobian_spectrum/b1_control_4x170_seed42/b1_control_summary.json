@@ -1,0 +1,25 @@
+{
+  "configuration": {
+    "width": 170,
+    "depth": 4,
+    "seed": 42,
+    "active_fraction": 0.5
+  },
+  "models": {
+    "B1": {
+      "count": 680,
+      "finite_count": 680,
+      "max_modulus": 0.7655691470386208,
+      "median_modulus": 0.005006511258581601,
+      "fraction_inside_unit_circle": 1.0
+    },
+    "alpha1": {
+      "count": 680,
+      "finite_count": 680,
+      "max_modulus": 17.881086205321818,
+      "median_modulus": 0.004595780633430995,
+      "fraction_inside_unit_circle": 0.85
+    }
+  },
+  "interpretation": "Square B1/alpha1 initialization control. Unit-circle eigenvalue comparison applies only to this square control, not to rectangular DA-SNN layers."
+}
