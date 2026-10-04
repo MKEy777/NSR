@@ -1,0 +1,154 @@
+\documentclass[12pt,technote,onecolumn]{IEEEtran}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{threeparttable}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+\usepackage{ulem}
+\usepackage{microtype}
+\usepackage{placeins}
+\usepackage{fancyhdr}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{xr}
+\externaldocument[][nocite]{supplement}
+\externaldocument{main}
+\makeatletter
+\bibcite{ref64}{7}
+\makeatother
+\DeclareUnicodeCharacter{00B1}{\ensuremath{\pm}}
+\DeclareUnicodeCharacter{03BC}{\ensuremath{\mu}}
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+
+\emergencystretch=4em
+\captionsetup{compatibility=false}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0.45em}
+\widowpenalty=10000
+\clubpenalty=10000
+\raggedbottom
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0pt}}
+
+\newcommand{\ResponseTableFormat}{%
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}%
+  \setlength{\tabcolsep}{4pt}%
+}
+
+\begin{document}
+\begin{center}
+{\large\bfseries Response to Reviewers}\\
+{\bfseries ``An Asynchronous Neuromorphic Architecture for Wearable EEG Emotion Recognition''}\\
+{\bfseries Manuscript ID: NSR\_MS-2026-878.R1}\\
+\end{center}
+
+\vspace{4mm}
+
+Dear Editor and Reviewers,
+
+We sincerely appreciate the reviewers' careful assessment and constructive suggestions. Their comments helped us further improve the clarity, consistency, and presentation of the revised manuscript.\par\medskip
+
+Reviewer 2's four comments are addressed individually below. The associated changes appear in the main manuscript and Supplementary Information and are highlighted in blue for ease of review. Detailed responses follow.
+
+\vspace{6mm}
+\begin{center}
+\underline{Responses to Comments of Reviewer 2}
+\end{center}
+\vspace{3mm}
+
+\vspace{4mm}
+\noindent {\bf Comment 2.1:}
+
+``{\it The Abstract still leaves the hardware measurement boundary somewhat unclear. The reported latency of 18~$\mu$s, dynamic power of 40~mW, and energy of 2.66~$\mu$J cover only accelerator inference from a preprocessed input tensor. EEG acquisition, PSE, LDS, communication, and battery operation are not included. Moreover, the 2.66~$\mu$J value is calculated from the total power of 148~mW, whereas the Abstract reports only the dynamic power of 40~mW. These figures are therefore not presented on the same basis.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 2.1:}\par
+
+The Abstract now reports inference latency, total power, and total energy per inference on a consistent measurement basis.
+
+The ``Hardware Implementation'' section reports the dynamic and static power breakdown. The Supplementary Information defines the accelerator measurement boundary, reports standalone PSE and LDS measurements, and provides the energy calculation. The Discussion clarifies that EEG acquisition, communication, and battery operation are outside the integrated system evaluation. The revised Abstract sentence is quoted below.
+
+\newpage
+The revised Abstract sentence reads:
+
+\uline{``The accelerator completes inference on a preprocessed EEG tensor in $18\,\mu\mathrm{s}$, with total power consumption of $148\,\mathrm{mW}$ and energy consumption of $2.66\,\mu\mathrm{J}$ per inference.''}
+
+\vspace{4mm}
+\noindent {\bf Comment 2.2:}
+
+``{\it Fig. 3a shows performance under matched-noise training rather than the robustness of a fixed model to unseen corruption, because training and model selection were repeated for each corruption type and noise level. The caption and related discussion should make this distinction explicit and should not imply zero-shot robustness of a model trained only on clean data.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 2.2:}\par
+
+Figure~3a evaluates sensitivity under matched-noise training rather than zero-shot robustness to unseen corruption. Its caption and the related Results and Discussion text now state this distinction explicitly.
+
+Separate training and model selection were performed for every perturbation type and noise level, followed by evaluation under the corresponding condition. Accordingly, the endpoint annotations compare separately trained NL$=0.125$ and Clean models rather than a fixed clean-trained model exposed to unseen corruption.
+
+Figure~3 and its complete caption are shown below. The associated revisions in \textbf{``Sensitivity to Controlled EEG Perturbations and Quantization''} and \textbf{``Discussion''} follow the figure.
+
+\begin{center}
+\begin{minipage}{0.98\textwidth}
+\centering
+\includegraphics[width=\linewidth]{figures/robustness_quantization_comparison.png}
+\smallskip
+
+\raggedright\footnotesize
+\textbf{Figure 3. Sensitivity to controlled EEG perturbations, weight quantization, and model complexity.}
+\textbf{(a)} Accuracy of DA-SNN, DH-SNN, and EEGNet on SEED, DEAP, and DREAMER under Gaussian noise, low-frequency drift, and electromyographic (EMG)-like transient bursts \uline{applied before feature extraction.} Relative noise level (NL) denotes the ratio of the perturbation standard deviation to the clean signal standard deviation within each channel; Clean denotes NL$=0$.
+\uline{Endpoint annotations report $\Delta\mathrm{Acc}=\mathrm{Acc}_{\mathrm{NL}=0.125}-\mathrm{Acc}_{\mathrm{Clean}}$ in percentage points; each model was trained and selected separately for every perturbation type and NL and evaluated under the corresponding condition.}
+\textbf{(b)} SEED accuracy in a weight-bit-width sweep from 32 to 4 bits using quantization-aware training.
+\textbf{(c)} Performance comparison of DA-SNN with representative lightweight models. FLOPs and parameter counts are normalized.
+\end{minipage}
+\end{center}
+
+\uline{``Each model was trained, selected, and evaluated separately for every perturbation type and NL using the same random window-level 80/20 protocol.''}
+
+\uline{``DA-SNN achieves the highest accuracy across the five subject-dependent benchmarks. Under matched-noise training, the accuracy gap between NL$=0.125$ and Clean was smaller for DA-SNN than for DH-SNN and EEGNet in all nine evaluated dataset--perturbation combinations.''}
+
+\vspace{4mm}
+\noindent {\bf Comment 2.3:}
+
+``{\it Fig. 2 and Table 1 appear out of scale relative to the page and to the other figures and tables in the main text. Their dimensions should be adjusted for a more consistent layout. Font sizes should also be standardized across all main-text figures and tables, including panel labels, axis labels, legends, and table notes.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 2.3:}\par
+
+The previous scaling of Fig.~2 and Table~1 was inconsistent with the rest of the manuscript. The 2.8-cm negative horizontal offsets and oversized containers have been removed, and both items are now centered within the standard two-column text width.
+
+All main-text figures and tables were subsequently inspected at their final rendered sizes. Panel labels, axis labels, legends, captions, table entries, and notes now maintain a consistent visual hierarchy and remain legible at the final page scale.
+
+\vspace{4mm}
+\noindent {\bf Comment 2.4:}
+
+``{\it Some typos and formatting errors should be revised. For instance, in lines 2- 3 of page 2, there should be no line break.}''
+\vspace{1mm}
+
+\noindent {\bf Response to Comment 2.4:}\par
+
+A full proofread of the manuscript and Supplementary Information was conducted, and the identified typographical and formatting errors were corrected throughout both files. The formatting of the Supplementary Information was also checked and standardized throughout.
+
+The unintended paragraph break after ``latency'' has been removed, so ``as monitoring duration grows'' now continues the same sentence in the same paragraph.
+
+The corrected passage reads:
+
+\uline{``Overall, synchronous acquisition followed by dense computation couples computational cost to the input sampling rate, increasing power and latency as monitoring duration grows.''}
+
+\end{document}
