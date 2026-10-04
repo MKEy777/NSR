@@ -96,3 +96,14 @@ token-optimizer/**/*.db-shm
 .env.*
 *.key
 *.pem
+
+# Large binary assets kept on disk only (not version-controlled)
+*.pdf
+*.eps
+*.zip
+*.tif
+*.tiff
+*.png
+token-optimizer/
+写作/token-optimizer/
+写作/二轮小修/$out/
